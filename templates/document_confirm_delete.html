@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block page_title %}Confirmer la suppression{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 50px auto; padding: 20px;">
+    <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 25px;">
+        <h2 style="color: #856404; margin-top: 0;">⚠️ Confirmer la suppression</h2>
+        
+        <p style="color: #856404; margin: 15px 0;">
+            Êtes-vous sûr de vouloir supprimer ce document ?
+        </p>
+
+        <div style="background: white; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Employé :</strong> {{ document.employee.user.first_name }} {{ document.employee.user.last_name }}</p>
+            <p style="margin: 5px 0;"><strong>Type :</strong> {{ document.get_document_type_display }}</p>
+            <p style="margin: 5px 0;"><strong>Titre :</strong> {{ document.title }}</p>
+            <p style="margin: 5px 0;"><strong>Uploadé le :</strong> {{ document.uploaded_at|date:"d/m/Y à H:i" }}</p>
+        </div>
+
+        <p style="color: #856404; font-size: 14px; margin: 15px 0;">
+            ⚠️ Le fichier sera définitivement supprimé du serveur. Cette action ne peut pas être annulée.
+        </p>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <form method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" style="background: #f44336; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                    🗑️ Supprimer définitivement
+                </button>
+            </form>
+            <a href="{% url 'documents' %}" style="background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 4px; text-decoration: none; font-weight: 600; display: inline-block;">
+                ❌ Annuler
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

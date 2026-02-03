@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block page_title %}Confirmer la suppression{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 50px auto; padding: 20px;">
+    <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 25px;">
+        <h2 style="color: #856404; margin-top: 0;">⚠️ Confirmer la suppression</h2>
+        
+        <p style="color: #856404; margin: 15px 0;">
+            Êtes-vous sûr de vouloir supprimer cette absence ?
+        </p>
+
+        <div style="background: white; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <p style="margin: 5px 0;"><strong>Employé :</strong> {{ absence.employee.user.first_name }} {{ absence.employee.user.last_name }}</p>
+            <p style="margin: 5px 0;"><strong>Type :</strong> {{ absence.get_absence_type_display }}</p>
+            <p style="margin: 5px 0;"><strong>Période :</strong> du {{ absence.date_start }} au {{ absence.date_end }}</p>
+            <p style="margin: 5px 0;"><strong>Durée :</strong> {{ absence.duration_days }} jour(s)</p>
+        </div>
+
+        <p style="color: #856404; font-size: 14px; margin: 15px 0;">
+            Cette action ne peut pas être annulée.
+        </p>
+
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <form method="POST" style="display: inline;">
+                {% csrf_token %}
+                <button type="submit" style="background: #f44336; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
+                    🗑️ Supprimer définitivement
+                </button>
+            </form>
+            <a href="{% url 'absences' %}" style="background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 4px; text-decoration: none; font-weight: 600; display: inline-block;">
+                ❌ Annuler
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ page_title }} - SIRH{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h2>📊 Rapport Financier Complet</h2>
+            <p class="mb-0 small">Cotisations salariales ET patronales - RÉSERVÉ ADMINS</p>
+        </div>
+        
+        <div class="card-body">
+            <!-- Sélecteur Mois/Année -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <form method="get" class="form-inline">
+                        <label for="month" class="mr-2">Mois:</label>
+                        <select name="month" id="month" class="form-control mr-3">
+                            {% for m in months %}
+                                <option value="{{ m }}" {% if m == month %}selected{% endif %}>
+                                    {{ m|stringformat:"02d" }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        
+                        <label for="year" class="mr-2">Année:</label>
+                        <select name="year" id="year" class="form-control mr-3">
+                            {% for y in years %}
+                                <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                        
+                        <button type="submit" class="btn btn-sm btn-primary">Filtrer</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Résumé Global -->
+            <div class="alert alert-info">
+                <h5>Période: <strong>{{ month|stringformat:"02d" }}/{{ year }}</strong> - {{ nb_employees }} salarié(e)s</h5>
+            </div>
+
+            <!-- Totaux Principaux -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>TOTAL BRUT</h6>
+                            <h3 class="text-primary">{{ total_brut|floatformat:2 }}€</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>COTISATIONS SALARIALES</h6>
+                            <h3 class="text-warning">{{ total_employee_contributions|floatformat:2 }}€</h3>
+                            <small>{{ pct_employee_contributions|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>COTISATIONS PATRONALES</h6>
+                            <h3 class="text-danger">{{ total_employer_contributions|floatformat:2 }}€</h3>
+                            <small>{{ pct_employer_contributions|floatformat:1 }}%</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-light">
+                        <div class="card-body text-center">
+                            <h6>TOTAL NET</h6>
+                            <h3 class="text-success">{{ total_net|floatformat:2 }}€</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Détail des Cotisations Salariales -->
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-white">
+                            <h5 class="mb-0">💼 Cotisations Salariales (Déductions Employé)</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Cotisation</th>
+                                        <th class="text-right">Montant</th>
+                                        <th class="text-right">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrib_name, amount in employee_contributions %}
+                                        <tr>
+                                            <td>{{ contrib_name }}</td>
+                                            <td class="text-right"><strong>{{ amount|floatformat:2 }}€</strong></td>
+                                            <td class="text-right">
+                                                {% if total_brut > 0 %}
+                                                    {{ amount|floatformat:0 }}/{{ total_brut|floatformat:0 }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Aucune cotisation</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-weight-bold bg-light">
+                                        <td>TOTAL SALARIAL</td>
+                                        <td class="text-right text-warning">{{ total_employee_contributions|floatformat:2 }}€</td>
+                                        <td class="text-right">{{ pct_employee_contributions|floatformat:1 }}%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Détail des Cotisations Patronales -->
+                <div class="col-md-6">
+                    <div class="card border-danger">
+                        <div class="card-header bg-danger text-white">
+                            <h5 class="mb-0">🏢 Cotisations Patronales (Coût Employeur)</h5>
+                        </div>
+                        <div class="card-body">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Cotisation</th>
+                                        <th class="text-right">Montant</th>
+                                        <th class="text-right">%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for contrib_name, amount in employer_contributions %}
+                                        <tr>
+                                            <td>{{ contrib_name }}</td>
+                                            <td class="text-right"><strong>{{ amount|floatformat:2 }}€</strong></td>
+                                            <td class="text-right">
+                                                {% if total_brut > 0 %}
+                                                    {{ amount|floatformat:0 }}/{{ total_brut|floatformat:0 }}
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                    {% empty %}
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted">Aucune cotisation</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="font-weight-bold bg-light">
+                                        <td>TOTAL PATRONAL</td>
+                                        <td class="text-right text-danger">{{ total_employer_contributions|floatformat:2 }}€</td>
+                                        <td class="text-right">{{ pct_employer_contributions|floatformat:1 }}%</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bilan Global -->
+            <div class="card mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">📈 Bilan Global Employer (Bilan Comptable)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-lg">
+                        <thead>
+                            <tr>
+                                <th>Libellé</th>
+                                <th class="text-right">Montant</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Masse Salariale BRUTE</strong></td>
+                                <td class="text-right"><strong>{{ total_brut|floatformat:2 }}€</strong></td>
+                                <td>Salaire imposable des salariés</td>
+                            </tr>
+                            <tr class="table-warning">
+                                <td><strong>Cotisations Salariales</strong></td>
+                                <td class="text-right"><strong>- {{ total_employee_contributions|floatformat:2 }}€</strong></td>
+                                <td>Retenues sur salaires</td>
+                            </tr>
+                            <tr class="table-info">
+                                <td><strong>Salaire NET Versé</strong></td>
+                                <td class="text-right"><strong>{{ total_net|floatformat:2 }}€</strong></td>
+                                <td>Net reçu par les salariés</td>
+                            </tr>
+                            <tr class="table-danger">
+                                <td><strong>+ Cotisations Patronales</strong></td>
+                                <td class="text-right"><strong>+ {{ total_employer_contributions|floatformat:2 }}€</strong></td>
+                                <td>Coûts supplémentaires employeur</td>
+                            </tr>
+                            <tr class="table-success">
+                                <td><strong>COÛT TOTAL POUR L'EMPLOYEUR</strong></td>
+                                <td class="text-right"><strong class="h5">{{ total_brut|add:total_employer_contributions|floatformat:2 }}€</strong></td>
+                                <td><strong>Brut + Patronale</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-info mt-3">
+                        <strong>💡 Interprétation:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>L'employeur paie <strong>{{ total_brut|floatformat:2 }}€</strong> en salaires BRUTS</li>
+                            <li>Les salariés reçoivent <strong>{{ total_net|floatformat:2 }}€</strong> nets</li>
+                            <li>Cotisations salariales: <strong>{{ total_employee_contributions|floatformat:2 }}€</strong> (prélevées sur salaires)</li>
+                            <li>Coûts patronaux supplémentaires: <strong>{{ total_employer_contributions|floatformat:2 }}€</strong></li>
+                            <li><strong>Coût RÉEL pour employer: {{ total_brut|add:total_employer_contributions|floatformat:2 }}€</strong> (Brut + Patronales)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Liste des Fiches de Paie -->
+            <div class="card mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">👥 Fiches de Paie du Mois ({{ nb_employees }} salarié(e)s)</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-hover table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Salarié</th>
+                                <th class="text-right">Brut</th>
+                                <th class="text-right">Cotis. Salariées</th>
+                                <th class="text-right">Net</th>
+                                <th class="text-right">Cotis. Patronales</th>
+                                <th class="text-right">Coût Total</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payroll in payrolls %}
+                                <tr>
+                                    <td>{{ payroll.employee.user.get_full_name }}</td>
+                                    <td class="text-right">{{ payroll.gross_salary|floatformat:2 }}€</td>
+                                    <td class="text-right text-warning">{{ payroll.social_security|floatformat:2 }}€</td>
+                                    <td class="text-right">{{ payroll.net_salary|floatformat:2 }}€</td>
+                                    <td class="text-right text-danger">
+                                        {% comment %}Calcul simplifié des cotis patronales{% endcomment %}
+                                        ~{{ payroll.gross_salary|floatformat:0 }}€
+                                    </td>
+                                    <td class="text-right font-weight-bold">
+                                        {% comment %}Approximation: brut * 1.45 (45% de charges){% endcomment %}
+                                        {{ payroll.gross_salary|floatformat:2 }}€
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'payroll_detail' payroll.id %}" class="btn btn-xs btn-primary" title="Voir fiche">
+                                            👁️ Voir
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">Aucune fiche de paie pour cette période</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="mb-3">
+                <a href="{% url 'payroll' %}" class="btn btn-secondary">← Retour aux fiches</a>
+                <button class="btn btn-primary" onclick="window.print()">🖨️ Imprimer</button>
+                <button class="btn btn-success" onclick="exportToCSV()">📥 Exporter CSV</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function exportToCSV() {
+    let csv = 'Rapport Financier - {{ month|stringformat:"02d" }}/{{ year }}\n\n';
+    csv += 'Période,Salariés,Brut Total,Cotis. Salariales,Cotis. Patronales,Net Total,Coût Total Employer\n';
+    csv += '{{ month|stringformat:"02d" }}/{{ year }},{{ nb_employees }},{{ total_brut|floatformat:2 }},{{ total_employee_contributions|floatformat:2 }},{{ total_employer_contributions|floatformat:2 }},{{ total_net|floatformat:2 }},{{ total_brut|add:total_employer_contributions|floatformat:2 }}\n\n';
+    
+    csv += 'Cotisations Salariales\n';
+    csv += 'Cotisation,Montant\n';
+    {% for contrib_name, amount in employee_contributions %}
+        csv += '"{{ contrib_name }}",{{ amount|floatformat:2 }}\n';
+    {% endfor %}
+    
+    csv += '\nCotisations Patronales\n';
+    csv += 'Cotisation,Montant\n';
+    {% for contrib_name, amount in employer_contributions %}
+        csv += '"{{ contrib_name }}",{{ amount|floatformat:2 }}\n';
+    {% endfor %}
+    
+    const element = document.createElement('a');
+    element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv));
+    element.setAttribute('download', 'rapport_financier_{{ month|stringformat:"02d" }}_{{ year }}.csv');
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+}
+</script>
+
+<style>
+.btn-xs {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.75rem;
+}
+</style>
+{% endblock %}

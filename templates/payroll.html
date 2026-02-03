@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="search-box" style="display: flex; gap: 10px; align-items: center;">
+    <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+        <select name="period" style="padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px;">
+            <option value="">Toutes les périodes</option>
+            <option value="2024-01" {% if period == '2024-01' %}selected{% endif %}>Janvier 2024</option>
+            <option value="2024-02" {% if period == '2024-02' %}selected{% endif %}>Février 2024</option>
+            <option value="2024-03" {% if period == '2024-03' %}selected{% endif %}>Mars 2024</option>
+            <option value="2024-04" {% if period == '2024-04' %}selected{% endif %}>Avril 2024</option>
+            <option value="2024-05" {% if period == '2024-05' %}selected{% endif %}>Mai 2024</option>
+            <option value="2024-06" {% if period == '2024-06' %}selected{% endif %}>Juin 2024</option>
+        </select>
+        <button type="submit" class="btn">Filtrer</button>
+    </form>
+    <a href="/payroll/settings/" class="btn btn-secondary" style="margin-left: 10px; white-space: nowrap;">⚙️ Variables & Cotisations</a>
+</div>
+
+{% if payrolls %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>👤 Employé</th>
+                <th>📅 Période</th>
+                <th>💵 Salaire Brut</th>
+                <th>🧮 Cotisations</th>
+                <th>💳 Net à Payer</th>
+                <th>📊 Statut</th>
+                <th>⚙️ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payroll in payrolls %}
+            <tr>
+                <td><strong>{{ payroll.employee.user.get_full_name }}</strong></td>
+                <td>{{ payroll.month|stringformat:"02d" }}/{{ payroll.year }}</td>
+                <td>{{ payroll.gross_salary|floatformat:2 }} €</td>
+                <td>{{ payroll.total_deductions|floatformat:2 }} €</td>
+                <td><strong>{{ payroll.net_salary|floatformat:2 }} €</strong></td>
+                <td>
+                    {% if payroll.status == 'draft' %}
+                        <span class="badge badge-info">Brouillon</span>
+                    {% elif payroll.status == 'calculated' %}
+                        <span class="badge badge-warning">Calculé</span>
+                    {% elif payroll.status == 'validated' %}
+                        <span class="badge badge-success">Validé</span>
+                    {% else %}
+                        <span class="badge badge-danger">Échoué</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'payroll_detail' payroll.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">👁️ Détails</a>
+                    <a href="{% url 'payroll_export' payroll.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;">📥 Export</a>
+                    <a href="{% url 'payroll_delete' payroll.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer cette feuille de paie ?')">🗑️ Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div style="margin-top: 20px; padding: 15px; background: #f0f0f0; border-radius: 6px;">
+    <p><strong>Résumé Financier</strong></p>
+    <p>Total Brut : <strong>{{ total_gross|default:"0" }} €</strong></p>
+    <p>Total Net : <strong>{{ total_net|default:"0" }} €</strong></p>
+    <p>Total Cotisations : <strong>{{ total_deductions|default:"0" }} €</strong></p>
+</div>
+{% else %}
+<div class="empty-state">
+    <p>😕 Aucune paie trouvée pour cette période</p>
+    <a href="{% url 'payroll_create' %}" class="btn">➕ Créer une feuille de paie</a>
+</div>
+{% endif %}
+{% endblock %}

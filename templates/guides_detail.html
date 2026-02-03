@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 8px;">{{ guide.title }}</h2>
+    <p style="margin: 0 0 20px 0; color: #555;">{{ guide.subtitle }}</p>
+
+    <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+        {% for item in guide.bullets %}
+        <div style="border: 1px solid #eee; border-radius: 8px; padding: 12px 15px; background: #fff;">
+            <p style="margin: 0; color: #333;">• {{ item }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if guide.interactions %}
+    <h3 style="margin: 25px 0 10px 0;">Interactions avec les autres modules</h3>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 10px;">
+        {% for item in guide.interactions %}
+        <div style="border-left: 4px solid #667eea; background: #f5f7ff; padding: 10px 12px; border-radius: 6px; color: #333;">
+            {{ item }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 25px;">
+        <a href="/guides/" class="btn btn-secondary">⬅️ Retour aux guides</a>
+    </div>
+</div>
+{% endblock %}

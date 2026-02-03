@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">{% if contract %}✏️ Modifier le Contrat{% else %}➕ Nouveau Contrat{% endif %}</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">👤 Employé et Identification</h3>
+        
+        {% if not contract %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Employé *</label>
+            <select name="employee" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="">-- Sélectionner --</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}">{{ emp.user.get_full_name }} - {{ emp.profession.label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Numéro de contrat *</label>
+            <input type="text" name="contract_number" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Ex: CONT-2026-001">
+        </div>
+        {% else %}
+        <div style="padding: 15px; background: #f0f0f0; border-radius: 6px; margin-bottom: 20px;">
+            <p><strong>Employé :</strong> {{ contract.employee.user.get_full_name }}</p>
+            <p><strong>N° Contrat :</strong> {{ contract.contract_number }}</p>
+        </div>
+        {% endif %}
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📋 Type et Statut</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type de contrat *</label>
+                <select name="contract_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <option value="cdi" {% if contract.contract_type == 'cdi' %}selected{% endif %}>CDI</option>
+                    <option value="cdd" {% if contract.contract_type == 'cdd' %}selected{% endif %}>CDD</option>
+                    <option value="apprenticeship" {% if contract.contract_type == 'apprenticeship' %}selected{% endif %}>Apprentissage</option>
+                    <option value="professionalization" {% if contract.contract_type == 'professionalization' %}selected{% endif %}>Professionnalisation</option>
+                    <option value="internship" {% if contract.contract_type == 'internship' %}selected{% endif %}>Stage</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Statut *</label>
+                <select name="status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <option value="active" {% if contract.status == 'active' %}selected{% endif %}>Actif</option>
+                    <option value="suspended" {% if contract.status == 'suspended' %}selected{% endif %}>Suspendu</option>
+                    <option value="terminated" {% if contract.status == 'terminated' %}selected{% endif %}>Terminé</option>
+                    <option value="expired" {% if contract.status == 'expired' %}selected{% endif %}>Expiré</option>
+                </select>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Phase du contrat</label>
+            <select name="contract_status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="trial" {% if contract.contract_status == 'trial' %}selected{% endif %}>Période d'essai</option>
+                <option value="confirmed" {% if contract.contract_status == 'confirmed' %}selected{% endif %}>Confirmé</option>
+            </select>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📅 Dates</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date de début *</label>
+                <input type="date" name="start_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.start_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date de fin</label>
+                <input type="date" name="end_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.end_date|date:'Y-m-d'|default:'' }}">
+                <small style="color: #666;">Laisser vide pour CDI</small>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Fin période d'essai</label>
+                <input type="date" name="trial_end_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.trial_end_date|date:'Y-m-d'|default:'' }}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">💼 Conditions de travail</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Heures/semaine *</label>
+                <input type="number" name="working_hours_per_week" required step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.working_hours_per_week|unlocalize|default:'35.00' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Taux horaire (€)</label>
+                <input type="number" name="hourly_rate" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.hourly_rate|unlocalize|default_if_none:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Salaire mensuel (€)</label>
+                <input type="number" name="monthly_salary" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.monthly_salary|unlocalize|default_if_none:'' }}">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Médecine du travail</label>
+            <input type="text" name="occupational_health_service" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.occupational_health_service|default:'' }}" placeholder="Nom du service, organisme, etc.">
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Convention collective</label>
+            <input type="text" name="collective_agreement" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.collective_agreement|default:'Convention collective du transport sanitaire' }}">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date convention collective</label>
+            <input type="date" name="collective_agreement_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ contract.collective_agreement_date|date:'Y-m-d'|default:'' }}">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Notes</label>
+            <textarea name="notes" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">{{ contract.notes|default:'' }}</textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="/contracts/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

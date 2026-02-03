@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block header_actions %}
+<a href="{% url 'shift_create' %}" class="btn">➕ Ajouter</a>
+{% endblock %}
+
+{% block content %}
+<div class="search-box">
+    <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+        <input type="date" name="date" value="{{ filter_date }}">
+        <button type="submit" class="btn">Filtrer</button>
+    </form>
+</div>
+
+{% if shifts_data %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>📅 Date</th>
+                <th>🕐 Heure Début</th>
+                <th>🕑 Heure Fin</th>
+                <th>⏱️ Total heures</th>
+                <th>👥 Employés & Statuts</th>
+                <th>⚙️ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in shifts_data %}
+            <tr {% if item.is_cancelled %}style="background-color: #f8d7da;"{% elif item.is_in_progress %}style="background-color: #fff3cd; font-weight: bold;"{% elif item.is_past %}style="background-color: #e8e8e8; opacity: 0.8;"{% endif %}>
+                <td><strong>{{ item.shift.date|date:"d/m/Y" }}</strong></td>
+                <td>{{ item.shift.start_time|time:"H:i" }}</td>
+                <td>{{ item.shift.end_time|time:"H:i" }}</td>
+                <td><strong>{{ item.shift.duration_hours|floatformat:2 }}h</strong></td>
+                <td>
+                    {% if item.is_cancelled %}
+                        <div style="margin-bottom: 6px;">
+                            <span class="badge" style="background-color: #dc3545;">🚫 Quart annulé</span>
+                        </div>
+                    {% endif %}
+                    {% for assignment in item.shift.assignments.all %}
+                        <div style="margin-bottom: 5px;">
+                            <strong>{{ assignment.employee.user.get_full_name }}</strong>
+                            {% if assignment.status == 'cancelled' %}
+                                <span class="badge" style="background-color: #868e96;">🚫 Annulé</span>
+                            {% elif assignment.status == 'absent' %}
+                                <span class="badge" style="background-color: #dc3545;">❌ Absent</span>
+                            {% elif item.is_cancelled %}
+                                <span class="badge" style="background-color: #868e96;">🚫 Annulé</span>
+                            {% elif assignment.status == 'completed' %}
+                                <span class="badge" style="background-color: #6c757d;">✔️ Complété</span>
+                            {% elif item.is_in_progress or assignment.status == 'in_progress' %}
+                                <span class="badge" style="background-color: #ffc107;">▶️ En cours</span>
+                            {% elif item.is_past %}
+                                <span class="badge" style="background-color: #28a745;">✔️ COMPLÉTÉ</span>
+                            {% elif assignment.status == 'confirmed' %}
+                                <span class="badge" style="background-color: #28a745;">✅ Confirmé</span>
+                            {% elif assignment.status == 'assigned' %}
+                                <span class="badge" style="background-color: #007bff;">📋 Assigné</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    {% if not item.shift.assignments.exists %}
+                        <span class="badge badge-warning">⚠️ Aucun assigné</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'shift_edit' item.shift.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    <a href="{% url 'shift_delete' item.shift.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer ce quart ?')">🗑️ Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="margin-top: 20px; color: #666; text-align: right;">
+    <strong>Total :</strong> {{ shifts_data|length }} quart(s)
+</p>
+{% else %}
+<div class="empty-state">
+    <p>😕 Aucun planning trouvé pour cette période</p>
+    <a href="{% url 'shift_create' %}" class="btn">➕ Créer un quart</a>
+</div>
+{% endif %}
+{% endblock %}

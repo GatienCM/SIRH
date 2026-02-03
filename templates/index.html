@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sansoucy SIRH - Système d'Information RH</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+        
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 50px;
+        }
+        
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .version {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+        
+        .description {
+            font-size: 1.1em;
+            margin-top: 15px;
+            opacity: 0.95;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .module-card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+        }
+        
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .module-card h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+            font-size: 1.4em;
+        }
+        
+        .module-card p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        
+        .module-card a {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: opacity 0.3s;
+            font-weight: 500;
+        }
+        
+        .module-card a:hover {
+            opacity: 0.9;
+        }
+        
+        .admin-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-top: 40px;
+        }
+        
+        .admin-section h2 {
+            color: #667eea;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 1.8em;
+        }
+        
+        .admin-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .admin-link {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            text-align: center;
+            transition: transform 0.3s;
+            font-weight: 600;
+        }
+        
+        .admin-link:hover {
+            transform: scale(1.05);
+        }
+        
+        .stats-bar {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .stats-bar p {
+            font-size: 1.1em;
+            margin: 5px 0;
+        }
+        
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            opacity: 0.8;
+        }
+        
+        .icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 Sansoucy SIRH</h1>
+            <p class="version">Système d'Information RH - v1.0.0</p>
+            <p class="description">Plateforme complète de gestion RH pour transport sanitaire</p>
+        </header>
+        
+        <div class="modules-grid">
+            <div class="module-card">
+                <div class="icon">👤</div>
+                <h3>Authentification</h3>
+                <p>Gestion des utilisateurs et authentification sécurisée avec 4 rôles (Admin, RH, Manager, Employé)</p>
+                <a href="/api/auth/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">👨‍💼</div>
+                <h3>Employés</h3>
+                <p>Gestion complète des profils employés, métiers et informations personnelles</p>
+                <a href="/api/employees/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">📋</div>
+                <h3>Contrats</h3>
+                <p>Suivi des contrats de travail, conditions d'emploi et dates d'expiration</p>
+                <a href="/api/contracts/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">🚗</div>
+                <h3>Véhicules</h3>
+                <p>Gestion de la flotte de véhicules, maintenance et disponibilité</p>
+                <a href="/api/vehicles/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">📅</div>
+                <h3>Planning</h3>
+                <p>Gestion des shifts (6 types) et affectations des employés aux véhicules</p>
+                <a href="/api/planning/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">⏱️</div>
+                <h3>Feuilles de Temps</h3>
+                <p>Suivi des heures travaillées, absences et validation mensuelles</p>
+                <a href="/api/timesheets/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">💰</div>
+                <h3>Paie</h3>
+                <p>Calcul des salaires avec multiplicateurs, grilles salariales et déductions</p>
+                <a href="/api/payroll/">Accéder →</a>
+            </div>
+            
+            <div class="module-card">
+                <div class="icon">🏠</div>
+                <h3>Portail Salarié</h3>
+                <p>Espace personnel : demandes de congés, documents, notifications, dashboard</p>
+                <a href="/api/portal/">Accéder →</a>
+            </div>
+        </div>
+        
+        <div class="admin-section">
+            <h2>🔐 Espace Administration</h2>
+            <div class="admin-grid">
+                <a href="/api/admin/admin-dashboard/summary/" class="admin-link">
+                    📊 Dashboard<br><small>Vue d'ensemble globale</small>
+                </a>
+                <a href="/api/admin/audit-logs/" class="admin-link">
+                    📝 Logs d'Audit<br><small>Journal des actions</small>
+                </a>
+                <a href="/api/admin/system-settings/" class="admin-link">
+                    ⚙️ Paramètres Système<br><small>Configuration générale</small>
+                </a>
+                <a href="/api/admin/admin-dashboard/statistics/" class="admin-link">
+                    📈 Statistiques<br><small>Analyses et rapports</small>
+                </a>
+                <a href="/api/admin/admin-dashboard/reports/" class="admin-link">
+                    📋 Rapports<br><small>Conformité et alertes</small>
+                </a>
+                <a href="/admin/" class="admin-link" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    🎛️ Admin Django<br><small>Interface de gestion</small>
+                </a>
+            </div>
+        </div>
+        
+        <div class="stats-bar">
+            <p>✅ <strong>Tous les modules opérationnels</strong></p>
+            <p>📡 <strong>60+ endpoints REST API</strong> en français</p>
+            <p>🔒 <strong>Sécurisé</strong> avec authentification et permissions par rôle</p>
+        </div>
+        
+        <div class="footer">
+            <p>Sansoucy SIRH © 2026 - Transport Sanitaire</p>
+            <p>Environnement : Django 4.2.8 | Python 3.14 | Django REST Framework 3.14.0</p>
+        </div>
+    </div>
+</body>
+</html>

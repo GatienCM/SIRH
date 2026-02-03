@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block page_title %}📁 Documents de {{ employee.user.first_name }} {{ employee.user.last_name }}{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <!-- En-tête employé -->
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 8px; margin-bottom: 30px; box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);">
+        <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="font-size: 64px;">👤</div>
+            <div>
+                <h1 style="margin: 0; font-size: 32px;">{{ employee.user.first_name }} {{ employee.user.last_name }}</h1>
+                <p style="margin: 5px 0 0 0; opacity: 0.9; font-size: 16px;">
+                    {{ employee.employee_id }} • {{ employee.profession.label }}
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div style="background: {% if message.tags == 'success' %}#4CAF50{% elif message.tags == 'error' %}#f44336{% else %}#2196F3{% endif %}; color: white; padding: 15px; border-radius: 4px; margin-bottom: 10px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Formulaire upload -->
+    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="margin-top: 0; color: #333;">📤 Ajouter un Document</h2>
+        <form method="POST" enctype="multipart/form-data" name="upload" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            {% csrf_token %}
+            <input type="hidden" name="upload" value="1">
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Type de document *</label>
+                <select name="document_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">-- Sélectionner --</option>
+                    {% for code, label in document_types %}
+                    <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Titre *</label>
+                <input type="text" name="title" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;" placeholder="Ex: Contrat CDI 2026">
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Fichier *</label>
+                <input type="file" name="file" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Description</label>
+                <textarea name="description" rows="2" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial, sans-serif;"></textarea>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                    <input type="checkbox" name="is_visible" checked style="width: 18px; height: 18px;">
+                    <span style="color: #333; font-weight: 500;">Visible par le salarié</span>
+                </label>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <button type="submit" style="background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                    📤 Uploader le document
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des documents -->
+    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; color: #333; margin-bottom: 20px;">📂 Documents de {{ employee.user.first_name }} ({{ documents.count }})</h2>
+        
+        {% if documents %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Type</th>
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Titre</th>
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Description</th>
+                        <th style="padding: 15px; text-align: center; color: #333; font-weight: 600;">Taille</th>
+                        <th style="padding: 15px; text-align: center; color: #333; font-weight: 600;">Date</th>
+                        <th style="padding: 15px; text-align: center; color: #333; font-weight: 600;">Visible</th>
+                        <th style="padding: 15px; text-align: center; color: #333; font-weight: 600;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in documents %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px 15px;">
+                            <span style="background: #667eea; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                {{ doc.get_document_type_display }}
+                            </span>
+                        </td>
+                        <td style="padding: 12px 15px;"><strong>{{ doc.title }}</strong></td>
+                        <td style="padding: 12px 15px; max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {% if doc.description %}
+                            <small style="color: #666;">{{ doc.description }}</small>
+                            {% else %}
+                            <small style="color: #999;">-</small>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            <small>{{ doc.file_size }} Ko</small>
+                        </td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            <small>{{ doc.uploaded_at|date:"d/m/Y" }}</small>
+                        </td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            {% if doc.is_visible_to_employee %}
+                            <span style="color: #4CAF50;">✅ Oui</span>
+                            {% else %}
+                            <span style="color: #999;">❌ Non</span>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            <div style="display: flex; gap: 5px; justify-content: center;">
+                                <a href="{{ doc.file.url }}" target="_blank" style="background: #2196F3; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">
+                                    📥 Télécharger
+                                </a>
+                                <form method="POST" action="{% url 'document_delete' doc.id %}" style="display: inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" style="background: #f44336; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" onclick="return confirm('Confirmer la suppression de ce document ?');">
+                                        🗑️ Supprimer
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: #999; text-align: center; padding: 40px;">Aucun document pour cet employé</p>
+        {% endif %}
+    </div>
+
+    <!-- Retour -->
+    <div style="margin-top: 30px;">
+        <a href="{% url 'documents' %}" style="display: inline-block; padding: 12px 24px; background: #f5f5f5; color: #333; text-decoration: none; border-radius: 4px; font-weight: 600;">
+            ← Retour à la liste des employés
+        </a>
+    </div>
+</div>
+
+<style>
+button:hover, a:hover {
+    opacity: 0.9;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+</style>
+
+{% endblock %}

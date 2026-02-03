@@ -1,0 +1,277 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 30px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="color: #1e293b; font-size: 2em; margin: 0;">⚙️ Variables de paie & Cotisations</h1>
+        <div style="display: flex; gap: 10px;">
+            <a href="{% url 'financial_report' %}" class="btn btn-info" title="Voir rapport financier complet">📊 Rapport Financier</a>
+            <a href="/payroll/" class="btn btn-secondary">← Retour à la paie</a>
+        </div>
+    </div>
+
+    <!-- Section Variables de paie -->
+    <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="color: #667eea; margin-top: 0; font-size: 1.4em;">📊 Variables de Paie</h2>
+        
+        <!-- Formulaire d'ajout -->
+        <form method="post" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nom *</label>
+                    <input type="text" name="var_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Valeur *</label>
+                    <input type="number" name="var_value" step="0.0001" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Unité</label>
+                    <input type="text" name="var_unit" placeholder="% ou €" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Description</label>
+                    <input type="text" name="var_description" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+            </div>
+            <button type="submit" name="add_variable" style="padding: 10px 20px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">➕ Ajouter Variable</button>
+        </form>
+
+        <!-- Liste des variables -->
+        {% if variables %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+                <tr>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Nom</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Valeur</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Unité</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Statut</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for var in variables %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;">{{ var.name }}</td>
+                    <td style="padding: 12px;"><strong>{{ var.value|floatformat:2 }}</strong></td>
+                    <td style="padding: 12px;">{{ var.unit }}</td>
+                    <td style="padding: 12px;">{{ var.description|truncatewords:10 }}</td>
+                    <td style="padding: 12px;">
+                        {% if var.is_active %}
+                            <span style="background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">✅ Active</span>
+                        {% else %}
+                            <span style="background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">⛔ Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="var_id" value="{{ var.id }}">
+                            {% if var.is_active %}
+                                <button type="submit" name="toggle_variable" value="deactivate" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85em;" title="Désactiver">🔴</button>
+                            {% else %}
+                                <button type="submit" name="toggle_variable" value="activate" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85em;" title="Activer">✅</button>
+                            {% endif %}
+                        </form>
+                        <button onclick="editVariable({{ var.id }}, '{{ var.name|escapejs }}', '{{ var.value }}', '{{ var.unit|escapejs }}', '{{ var.description|escapejs }}')" style="background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85em; margin-left: 5px;" title="Modifier">✏️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #999;">Aucune variable définie pour l'instant.</p>
+        {% endif %}
+    </div>
+
+    <!-- Section Cotisations -->
+    <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2 style="color: #667eea; margin-top: 0; font-size: 1.4em;">💼 Cotisations Sociales</h2>
+        
+        <!-- Formulaire d'ajout -->
+        <form method="post" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            {% csrf_token %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nom *</label>
+                    <input type="text" name="contrib_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Taux (%) *</label>
+                    <input type="number" name="contrib_rate" step="0.0001" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Plafond (€)</label>
+                    <input type="number" name="contrib_ceiling" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Description</label>
+                    <input type="text" name="contrib_description" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                </div>
+            </div>
+            <button type="submit" name="add_contribution" style="padding: 10px 20px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: white; border: none; border-radius: 6px; font-weight: 500; cursor: pointer;">➕ Ajouter Cotisation</button>
+        </form>
+
+        <!-- Liste des cotisations -->
+        {% if contributions %}
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead style="background: #f0f0f0; border-bottom: 2px solid #ddd;">
+                <tr>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Nom</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Taux</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Plafond</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Type</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Description</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Statut</th>
+                    <th style="padding: 12px; text-align: left; font-weight: 600;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for contrib in contributions %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;">{{ contrib.name }}</td>
+                    <td style="padding: 12px;"><strong>{{ contrib.rate|floatformat:2 }}%</strong></td>
+                    <td style="padding: 12px;">{{ contrib.ceiling|floatformat:2|default:"—" }}</td>
+                    <td style="padding: 12px;">
+                        {% if contrib.is_patronal %}
+                            <span style="background: #fef3c7; color: #92400e; padding: 2px 6px; border-radius: 3px; font-size: 0.8em;">🏢 Patronale</span>
+                        {% else %}
+                            <span style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 3px; font-size: 0.8em;">👤 Salariale</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">{{ contrib.description|truncatewords:10 }}</td>
+                    <td style="padding: 12px;">
+                        {% if contrib.is_active %}
+                            <span style="background: #d1fae5; color: #065f46; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">✅ Active</span>
+                        {% else %}
+                            <span style="background: #fee2e2; color: #991b1b; padding: 4px 8px; border-radius: 4px; font-size: 0.85em;">⛔ Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px;">
+                        <form method="post" style="display: inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="contrib_id" value="{{ contrib.id }}">
+                            {% if contrib.is_active %}
+                                <button type="submit" name="toggle_contribution" value="deactivate" style="background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85em;" title="Désactiver">🔴</button>
+                            {% else %}
+                                <button type="submit" name="toggle_contribution" value="activate" style="background: #10b981; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85em;" title="Activer">✅</button>
+                            {% endif %}
+                        </form>
+                        <button onclick="editContribution({{ contrib.id }}, '{{ contrib.name|escapejs }}', '{{ contrib.rate }}', '{{ contrib.ceiling }}', '{{ contrib.description|escapejs }}', {{ contrib.is_patronal|yesno:'true,false' }})" style="background: #3b82f6; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 0.85em; margin-left: 5px;" title="Modifier">✏️</button>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #999;">Aucune cotisation définie pour l'instant.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal pour éditer une variable -->
+<div id="editVariableModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%;">
+        <h3 style="margin-top: 0; color: #667eea;">✏️ Modifier Variable</h3>
+        <form method="post" id="editVariableForm">
+            {% csrf_token %}
+            <input type="hidden" name="edit_var_id" id="edit_var_id">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nom</label>
+                <input type="text" name="edit_var_name" id="edit_var_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Valeur</label>
+                <input type="number" name="edit_var_value" id="edit_var_value" step="0.01" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Unité</label>
+                <input type="text" name="edit_var_unit" id="edit_var_unit" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Description</label>
+                <textarea name="edit_var_description" id="edit_var_description" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeEditVariableModal()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">Annuler</button>
+                <button type="submit" name="update_variable" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">💾 Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal pour éditer une cotisation -->
+<div id="editContributionModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%;">
+        <h3 style="margin-top: 0; color: #667eea;">✏️ Modifier Cotisation</h3>
+        <form method="post" id="editContributionForm">
+            {% csrf_token %}
+            <input type="hidden" name="edit_contrib_id" id="edit_contrib_id">
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nom</label>
+                <input type="text" name="edit_contrib_name" id="edit_contrib_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Taux (%)</label>
+                <input type="number" name="edit_contrib_rate" id="edit_contrib_rate" step="0.01" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Plafond (€)</label>
+                <input type="number" name="edit_contrib_ceiling" id="edit_contrib_ceiling" step="0.01" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">
+                    <input type="checkbox" name="edit_contrib_is_patronal" id="edit_contrib_is_patronal" style="margin-right: 5px;">
+                    Cotisation patronale (à charge de l'employeur)
+                </label>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Description</label>
+                <textarea name="edit_contrib_description" id="edit_contrib_description" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="closeEditContributionModal()" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">Annuler</button>
+                <button type="submit" name="update_contribution" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 6px; cursor: pointer;">💾 Enregistrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editVariable(id, name, value, unit, description) {
+    document.getElementById('edit_var_id').value = id;
+    document.getElementById('edit_var_name').value = name;
+    document.getElementById('edit_var_value').value = value;
+    document.getElementById('edit_var_unit').value = unit;
+    document.getElementById('edit_var_description').value = description;
+    document.getElementById('editVariableModal').style.display = 'flex';
+}
+
+function closeEditVariableModal() {
+    document.getElementById('editVariableModal').style.display = 'none';
+}
+
+function editContribution(id, name, rate, ceiling, description, isPatronal) {
+    document.getElementById('edit_contrib_id').value = id;
+    document.getElementById('edit_contrib_name').value = name;
+    document.getElementById('edit_contrib_rate').value = rate;
+    document.getElementById('edit_contrib_ceiling').value = ceiling || '';
+    document.getElementById('edit_contrib_description').value = description;
+    document.getElementById('edit_contrib_is_patronal').checked = isPatronal;
+    document.getElementById('editContributionModal').style.display = 'flex';
+}
+
+function closeEditContributionModal() {
+    document.getElementById('editContributionModal').style.display = 'none';
+}
+
+// Fermer les modals en cliquant à l'extérieur
+document.getElementById('editVariableModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditVariableModal();
+});
+
+document.getElementById('editContributionModal').addEventListener('click', function(e) {
+    if (e.target === this) closeEditContributionModal();
+});
+</script>{% endblock %}

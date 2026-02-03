@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Professions - Sansoucy SIRH{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">👔 Gestion des Professions</h2>
+        <a href="{% url 'profession_create' %}" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">➕ Nouvelle Profession</a>
+    </div>
+
+    {% if professions %}
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 12px; text-align: left;">Code</th>
+                    <th style="padding: 12px; text-align: left;">Libellé</th>
+                    <th style="padding: 12px; text-align: left;">Description</th>
+                    <th style="padding: 12px; text-align: center;">Statut</th>
+                    <th style="padding: 12px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for profession in professions %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;">{{ profession.code }}</td>
+                    <td style="padding: 12px;"><strong>{{ profession.label }}</strong></td>
+                    <td style="padding: 12px;">{{ profession.description|truncatewords:5 }}</td>
+                    <td style="padding: 12px; text-align: center;">
+                        {% if profession.is_active %}
+                            <span style="background: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Actif</span>
+                        {% else %}
+                            <span style="background: #999; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <a href="{% url 'profession_edit' profession.id %}" style="color: #667eea; text-decoration: none; margin-right: 10px;">✏️ Éditer</a>
+                        <a href="{% url 'profession_delete' profession.id %}" style="color: #f44336; text-decoration: none;" onclick="return confirm('Êtes-vous sûr ?');">🗑️ Supprimer</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="background: #f5f5f5; padding: 20px; border-radius: 4px; text-align: center; color: #999;">
+        <p>Aucune profession définie. <a href="{% url 'profession_create' %}" style="color: #667eea;">Créer une profession</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

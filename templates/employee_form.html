@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">{% if employee %}✏️ Modifier l'Employé{% else %}➕ Nouvel Employé{% endif %}</h2>
+    
+    {% if errors %}
+    <div style="background-color: #fee; border: 1px solid #fcc; color: #c33; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+        <strong>⚠️ Erreurs :</strong>
+        <ul style="margin: 10px 0 0 20px;">
+            {% for error in errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">👤 Compte Utilisateur</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nom d'utilisateur *</label>
+            <input type="text" name="username" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ form_data.username|default:employee.user.username|default:'' }}{% else %}{{ form_data.username|default:'' }}{% endif %}">
+        </div>
+        
+        {% if not employee %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Mot de passe *</label>
+            <input type="password" name="password" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        </div>
+        {% endif %}
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Prénom *</label>
+                <input type="text" name="first_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ form_data.first_name|default:employee.user.first_name|default:'' }}{% else %}{{ form_data.first_name|default:'' }}{% endif %}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nom *</label>
+                <input type="text" name="last_name" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ form_data.last_name|default:employee.user.last_name|default:'' }}{% else %}{{ form_data.last_name|default:'' }}{% endif %}">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Email *</label>
+            <input type="email" name="email" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ form_data.email|default:employee.user.email|default:'' }}{% else %}{{ form_data.email|default:'' }}{% endif %}">
+        </div>
+        
+        {% if employee %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nouveau mot de passe (laisser vide pour ne pas modifier)</label>
+            <input type="password" name="new_password" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Minimum 8 caractères">
+            <small style="color: #666; display: block; margin-top: 5px;">Laissez ce champ vide si vous ne souhaitez pas modifier le mot de passe</small>
+        </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Rôle *</label>
+            <select name="role" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                {% if employee %}
+                <option value="employee" {% if employee.user.role == 'employee' %}selected{% endif %}>Employé</option>
+                <option value="manager" {% if employee.user.role == 'manager' %}selected{% endif %}>Manager</option>
+                <option value="rh" {% if employee.user.role == 'rh' %}selected{% endif %}>RH</option>
+                <option value="admin" {% if employee.user.role == 'admin' %}selected{% endif %}>Admin</option>
+                {% else %}
+                <option value="employee" selected>Employé</option>
+                <option value="manager">Manager</option>
+                <option value="rh">RH</option>
+                <option value="admin">Admin</option>
+                {% endif %}
+            </select>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📋 Informations Employé</h3>
+        
+        {% if not employee %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">ID Employé *</label>
+            <input type="text" name="employee_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Ex: EMP001">
+        </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date d'entrée *</label>
+            <input type="date" name="date_entry" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.date_entry|date:'Y-m-d' }}{% endif %}">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date de naissance *</label>
+                <input type="date" name="birth_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.birth_date|date:'Y-m-d'|default:'' }}{% endif %}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Lieu de naissance</label>
+                <input type="text" name="birth_place" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.birth_place|default:'' }}{% endif %}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nationalité</label>
+                <input type="text" name="nationality" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.nationality|default:'Français(e)' }}{% else %}Français(e){% endif %}">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Numéro de Sécurité Sociale *</label>
+            <input type="text" name="social_security_number" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.social_security_number|default:'' }}{% endif %}" placeholder="1 23 45 67 890 123 45">
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">🏠 Adresse</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Adresse *</label>
+            <input type="text" name="address" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.address|default:'' }}{% endif %}">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Code postal *</label>
+                <input type="text" name="postal_code" required pattern="\d{5}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.postal_code|default:'' }}{% endif %}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Ville *</label>
+                <input type="text" name="city" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.city|default:'' }}{% endif %}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Pays</label>
+                <input type="text" name="country" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.country|default:'France' }}{% else %}France{% endif %}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📞 Contact</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Téléphone personnel *</label>
+            <input type="tel" name="phone" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.phone|default:'' }}{% endif %}" placeholder="+33612345678">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Contact d'urgence</label>
+                <input type="text" name="emergency_contact" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.emergency_contact|default:'' }}{% endif %}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Téléphone d'urgence</label>
+                <input type="tel" name="emergency_phone" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.emergency_phone|default:'' }}{% endif %}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">💼 Informations Professionnelles</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Profession *</label>
+                <select name="profession" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <option value="">-- Sélectionner --</option>
+                    {% for profession in professions %}
+                    <option value="{{ profession.id }}" {% if employee and employee.profession.id == profession.id %}selected{% endif %}>{{ profession.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Qualification</label>
+                <input type="text" name="qualification" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.qualification|default:'' }}{% endif %}" placeholder="Ex: DEA">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Statut</label>
+            <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="active" {% if employee and employee.status == 'active' %}selected{% endif %}>Actif</option>
+                <option value="suspended" {% if employee and employee.status == 'suspended' %}selected{% endif %}>Suspendu</option>
+                <option value="left" {% if employee and employee.status == 'left' %}selected{% endif %}>Sorti</option>
+            </select>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">💳 Informations Bancaires</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">RIB (IBAN)</label>
+            <input type="text" name="rib" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{% if employee %}{{ employee.rib|default:'' }}{% endif %}" placeholder="FR76 1234 5678 9012 3456 7890 123">
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="/employees/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

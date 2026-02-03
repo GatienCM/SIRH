@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block page_title %}📊 Tableau de Bord{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 25px; margin-bottom: 30px;">
+    <!-- Statistics Cards -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">👨‍💼 Employés Actifs</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #667eea;">{{ stats.employees }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">📅 Quarts Aujourd'hui</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #667eea;">{{ stats.shifts_today }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">👥 Assignations Aujourd'hui</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #667eea;">{{ stats.assignments_today }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">� Feuilles de Temps en Attente</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #764ba2;">{{ stats.timesheets_pending }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">💰 Paies Calculées</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #764ba2;">{{ stats.payrolls_pending }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">💳 Total Salaires (Mois)</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #764ba2;">{{ stats.total_salaries|floatformat:2|default:"0" }} €</div>
+    </div>
+</div>
+
+<!-- Quick Access Modules -->
+<div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 30px;">
+    <h3 style="margin-bottom: 20px; color: #333;">⚡ Accès Rapide</h3>
+    
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+        <a href="/employees/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">👨‍💼</div>
+            <div>
+                <div style="font-weight: 600;">Employés</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Gérer l'équipe</div>
+            </div>
+        </a>
+        
+        <a href="/planning/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">📅</div>
+            <div>
+                <div style="font-weight: 600;">Planning</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Organiser les quarts</div>
+            </div>
+        </a>
+        
+        <a href="/timesheets/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">⏱️</div>
+            <div>
+                <div style="font-weight: 600;">Feuilles de Temps</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Saisir les heures</div>
+            </div>
+        </a>
+        
+        <a href="/payroll/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">💰</div>
+            <div>
+                <div style="font-weight: 600;">Paie</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Gérer les salaires</div>
+            </div>
+        </a>
+        
+        <a href="/absences/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">📋</div>
+            <div>
+                <div style="font-weight: 600;">Absences</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Gérer les absences</div>
+            </div>
+        </a>
+        
+        <a href="/documents/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">📁</div>
+            <div>
+                <div style="font-weight: 600;">Documents (GED)</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Gérer les documents</div>
+            </div>
+        </a>
+        
+        <a href="/medical-visits/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">🏥</div>
+            <div>
+                <div style="font-weight: 600;">Visites Médicales</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Gérer les visites</div>
+            </div>
+        </a>
+        
+        <a href="/contracts/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">📄</div>
+            <div>
+                <div style="font-weight: 600;">Contrats</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Gérer les contrats</div>
+            </div>
+        </a>
+        
+        <a href="/guides/" style="
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        " onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='0 5px 15px rgba(102, 126, 234, 0.4)';"
+           onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none';">
+            <div style="font-size: 2em;">📘</div>
+            <div>
+                <div style="font-weight: 600;">Guides & FAQ</div>
+                <div style="font-size: 0.85em; opacity: 0.8;">Aide & procédures</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- Visites Médicales Urgentes -->
+{% if urgent_medical_visits or visits_to_schedule %}
+<div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 30px;">
+    <h3 style="margin-bottom: 20px; color: #333;">🏥 Visites Médicales</h3>
+    
+    {% if urgent_medical_visits %}
+    <div style="margin-bottom: 25px;">
+        <h4 style="color: #ef4444; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            <span>⚠️</span> Visites Urgentes (30 prochains jours)
+        </h4>
+        <div style="border-left: 4px solid #ef4444; background: #fef2f2; padding: 15px; border-radius: 0 8px 8px 0;">
+            {% for visit in urgent_medical_visits %}
+            <div style="{% if not forloop.last %}margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #fecaca;{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <div style="font-weight: 600; color: #1e293b; margin-bottom: 3px;">
+                            {{ visit.employee.user.first_name }} {{ visit.employee.user.last_name }}
+                        </div>
+                        <div style="font-size: 0.9em; color: #64748b;">
+                            {{ visit.get_visit_type_display }} - 
+                            <span style="color: #ef4444; font-weight: 500;">
+                                {% if visit.days_until_visit == 0 %}Aujourd'hui
+                                {% elif visit.days_until_visit == 1 %}Demain
+                                {% else %}Dans {{ visit.days_until_visit }} jours{% endif %}
+                            </span>
+                            ({{ visit.scheduled_date|date:"d/m/Y" }})
+                        </div>
+                    </div>
+                    <a href="{% url 'medical_visit_edit' visit.id %}" style="padding: 6px 12px; background: #ef4444; color: white; text-decoration: none; border-radius: 6px; font-size: 0.85em; font-weight: 500; white-space: nowrap;">
+                        Voir
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+    
+    {% if visits_to_schedule %}
+    <div>
+        <h4 style="color: #f59e0b; margin-bottom: 15px; display: flex; align-items: center; gap: 8px;">
+            <span>📅</span> Visites à Planifier
+        </h4>
+        <div style="border-left: 4px solid #f59e0b; background: #fffbeb; padding: 15px; border-radius: 0 8px 8px 0;">
+            {% for visit in visits_to_schedule %}
+            <div style="{% if not forloop.last %}margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #fde68a;{% endif %}">
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <div style="font-weight: 600; color: #1e293b; margin-bottom: 3px;">
+                            {{ visit.employee.user.first_name }} {{ visit.employee.user.last_name }}
+                        </div>
+                        <div style="font-size: 0.9em; color: #64748b;">
+                            {{ visit.get_visit_type_display }}
+                        </div>
+                    </div>
+                    <a href="{% url 'medical_visit_edit' visit.id %}" style="padding: 6px 12px; background: #f59e0b; color: white; text-decoration: none; border-radius: 6px; font-size: 0.85em; font-weight: 500; white-space: nowrap;">
+                        Planifier
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Welcome Section -->
+<div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 30px; color: #666;">
+    <h3 style="color: #333; margin-bottom: 15px;">👋 Bienvenue, {{ user.first_name }}!</h3>
+    <p>Vous êtes connecté en tant que <strong>{{ user.get_role_display }}</strong>.</p>
+    <p style="margin-top: 10px; font-size: 0.95em;">Utilisez le menu latéral pour accéder aux différents modules ou les raccourcis ci-dessus pour naviguer rapidement.</p>
+</div>
+{% endblock %}

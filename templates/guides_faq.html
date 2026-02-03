@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">📘 Guides & FAQ</h2>
+
+    <h3 style="margin-top: 0;">Guides d'utilisation</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 30px;">
+        {% for guide in guides %}
+        <div style="background: #f5f5f5; border-radius: 8px; padding: 15px;">
+            <h4 style="margin: 0 0 8px 0;">{{ guide.title }}</h4>
+            <p style="margin: 0 0 10px 0; color: #555;">{{ guide.description }}</p>
+            <a href="/guides/{{ guide.slug }}/" class="btn" style="padding: 8px 12px; font-size: 0.9em;">Ouvrir le guide</a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <h3>FAQ</h3>
+    <div style="display: grid; grid-template-columns: 1fr; gap: 12px;">
+        {% for item in faqs %}
+        <div style="border: 1px solid #eee; border-radius: 8px; padding: 12px 15px; background: #fff;">
+            <p style="margin: 0 0 6px 0; font-weight: 600;">{{ item.question }}</p>
+            <p style="margin: 0; color: #555;">{{ item.answer }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

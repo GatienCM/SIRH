@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block header_actions %}
+<a href="{% url 'vehicle_create' %}" class="btn">➕ Ajouter</a>
+{% endblock %}
+
+{% block content %}
+<div class="search-box">
+    <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+        <select name="status" style="padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px;">
+            <option value="">Tous les statuts</option>
+            <option value="available" {% if status == 'available' %}selected{% endif %}>Disponibles</option>
+            <option value="maintenance" {% if status == 'maintenance' %}selected{% endif %}>En Maintenance</option>
+            <option value="retired" {% if status == 'retired' %}selected{% endif %}>Retraités</option>
+        </select>
+        <button type="submit" class="btn">Filtrer</button>
+    </form>
+</div>
+
+{% if vehicles %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>🚗 Marque & Modèle</th>
+                <th>📝 Immatriculation</th>
+                <th>📅 Date Achat</th>
+                <th>⛽ Carburant</th>
+                <th>📊 Statut</th>
+                <th>🛠️ Maintenance</th>
+                <th>⚙️ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for vehicle in vehicles %}
+            <tr>
+                <td><strong>{{ vehicle.brand }} {{ vehicle.model }}</strong></td>
+                <td>{{ vehicle.registration_number }}</td>
+                <td>{{ vehicle.purchase_date|date:"d/m/Y" }}</td>
+                <td>{{ vehicle.fuel_type }}</td>
+                <td>
+                    {% if vehicle.status == 'available' %}
+                        <span class="badge badge-success">✓ Disponible</span>
+                    {% elif vehicle.status == 'maintenance' %}
+                        <span class="badge badge-warning">🛠️ Maintenance</span>
+                    {% else %}
+                        <span class="badge badge-danger">✗ Retraité</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if vehicle.last_maintenance %}
+                        {{ vehicle.last_maintenance|date:"d/m/Y" }}
+                    {% else %}
+                        <em style="color: #999;">Jamais</em>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'vehicle_edit' vehicle.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    <a href="{% url 'vehicle_delete' vehicle.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer ce véhicule ?')">🗑️ Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="margin-top: 20px; color: #666; text-align: right;">
+    <strong>Total :</strong> {{ vehicles.count }} véhicule(s)
+</p>
+{% else %}
+<div class="empty-state">
+    <p>😕 Aucun véhicule trouvé</p>
+    <a href="{% url 'vehicle_create' %}" class="btn">➕ Ajouter un véhicule</a>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">{% if vehicle %}✏️ Modifier le Véhicule{% else %}➕ Nouveau Véhicule{% endif %}</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">🔖 Identification</h3>
+        
+        {% if not vehicle %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">ID Véhicule *</label>
+            <input type="text" name="vehicle_id" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Ex: VEH-001">
+        </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Immatriculation *</label>
+            <input type="text" name="registration_number" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.registration_number|default:'' }}" placeholder="Ex: AB-123-CD">
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">🚗 Type et Caractéristiques</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type de véhicule *</label>
+            <select name="vehicle_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="">-- Sélectionner --</option>
+                <option value="ambulance" {% if vehicle.vehicle_type == 'ambulance' %}selected{% endif %}>Ambulance</option>
+                <option value="vsl" {% if vehicle.vehicle_type == 'vsl' %}selected{% endif %}>VSL</option>
+                <option value="taxi" {% if vehicle.vehicle_type == 'taxi' %}selected{% endif %}>Taxi</option>
+            </select>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Marque *</label>
+                <input type="text" name="brand" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.brand|default:'' }}" placeholder="Ex: Mercedes">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Modèle *</label>
+                <input type="text" name="model" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.model|default:'' }}" placeholder="Ex: Sprinter">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Année *</label>
+                <input type="number" name="year" required min="1990" max="2030" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.year|default:'' }}">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Couleur</label>
+            <input type="text" name="color" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.color|default:'' }}">
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">👥 Capacités</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Nombre de places</label>
+                <input type="number" name="seats_count" min="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.seats_count|default:'3' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Capacité brancards</label>
+                <input type="number" name="stretcher_capacity" min="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.stretcher_capacity|default:'1' }}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">⛽ Motorisation</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type de carburant</label>
+                <select name="fuel_type" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <option value="">-- Sélectionner --</option>
+                    <option value="essence" {% if vehicle.fuel_type == 'essence' %}selected{% endif %}>Essence</option>
+                    <option value="diesel" {% if vehicle.fuel_type == 'diesel' %}selected{% endif %}>Diesel</option>
+                    <option value="electrique" {% if vehicle.fuel_type == 'electrique' %}selected{% endif %}>Électrique</option>
+                    <option value="hybride" {% if vehicle.fuel_type == 'hybride' %}selected{% endif %}>Hybride</option>
+                </select>
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Consommation (L/100km)</label>
+                <input type="number" name="consumption_per_100km" step="0.1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.consumption_per_100km|default:'' }}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📊 Kilométrage</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Kilométrage initial</label>
+                <input type="number" name="initial_mileage" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.initial_mileage|default:'0' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Kilométrage actuel</label>
+                <input type="number" name="current_mileage" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.current_mileage|default:'0' }}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📅 Dates</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date d'achat *</label>
+                <input type="date" name="purchase_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.purchase_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Entrée en service *</label>
+                <input type="date" name="entry_date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.entry_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Sortie du service</label>
+                <input type="date" name="exit_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.exit_date|date:'Y-m-d'|default:'' }}">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Statut</label>
+            <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="available" {% if vehicle.status == 'available' %}selected{% endif %}>Disponible</option>
+                <option value="maintenance" {% if vehicle.status == 'maintenance' %}selected{% endif %}>En maintenance</option>
+                <option value="out_of_service" {% if vehicle.status == 'out_of_service' %}selected{% endif %}>Hors service</option>
+                <option value="retired" {% if vehicle.status == 'retired' %}selected{% endif %}>Retiré</option>
+            </select>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">🔧 Maintenance</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Dernière maintenance</label>
+                <input type="date" name="last_maintenance_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.last_maintenance_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Prochaine maintenance</label>
+                <input type="date" name="next_maintenance_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.next_maintenance_date|date:'Y-m-d'|default:'' }}">
+            </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Dernier contrôle technique</label>
+                <input type="date" name="last_inspection_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.last_inspection_date|date:'Y-m-d'|default:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Prochain contrôle technique</label>
+                <input type="date" name="next_inspection_date" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.next_inspection_date|date:'Y-m-d'|default:'' }}">
+            </div>
+        </div>
+        
+        <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📄 Assurance</h3>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">N° de police d'assurance</label>
+            <input type="text" name="insurance_policy_number" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ vehicle.insurance_policy_number|default:'' }}">
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="/vehicles/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

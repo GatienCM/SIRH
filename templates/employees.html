@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block header_actions %}
+<form method="get" action="" style="display:inline; margin-right:10px;">
+    <select id="view_employee_id" name="view_employee_id" style="padding:6px 10px; border-radius:6px; border:1px solid #ccc;">
+        <option value="">👁️ Vue salariée...</option>
+        {% for employee in employees %}
+            <option value="{{ employee.id }}" {% if view_employee and view_employee.id == employee.id %}selected{% endif %}>{{ employee.user.get_full_name }}</option>
+        {% endfor %}
+    </select>
+    <button type="button" class="btn" id="open_employee_view" style="margin-left:8px;">Ouvrir la vue</button>
+</form>
+<script>
+document.getElementById('open_employee_view').onclick = function() {
+    var id = document.getElementById('view_employee_id').value;
+    if (id) {
+        window.open('/employees/' + id + '/simulate/', '_blank');
+    } else {
+        alert('Sélectionnez un salarié.');
+    }
+};
+</script>
+<a href="{% url 'employee_create' %}" class="btn">➕ Ajouter</a>
+{% endblock %}
+
+{% block content %}
+<div class="search-box">
+    <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+        <input type="text" name="search" placeholder="🔍 Rechercher un employé (nom, email)..." value="{{ search }}">
+        <button type="submit" class="btn">Chercher</button>
+    </form>
+</div>
+
+
+
+{% if employees %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>👤 Nom</th>
+                <th>📧 Email</th>
+                <th>💼 Profession</th>
+                <th>📝 Statut Contrat</th>
+                <th>⚙️ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td><strong>{{ employee.user.get_full_name }}</strong></td>
+                <td>{{ employee.user.email }}</td>
+                <td>{{ employee.profession.label|default:"Non assigné" }}</td>
+                <td>
+                    {% if employee.status == 'active' %}
+                        <span class="badge badge-success">✓ Actif</span>
+                    {% elif employee.status == 'suspended' %}
+                        <span class="badge badge-warning">⏸ Suspendu</span>
+                    {% else %}
+                        <span class="badge badge-danger">✗ Sorti</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'employee_edit' employee.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    <a href="{% url 'employee_delete' employee.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Êtes-vous sûr de vouloir supprimer cet employé ?')">🗑️ Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="margin-top: 20px; color: #666; text-align: right;">
+    <strong>Total :</strong> {{ employees.count }} employé(s)
+</p>
+{% else %}
+<div class="empty-state">
+    <p>😕 Aucun employé trouvé</p>
+    <a href="{% url 'employee_create' %}" class="btn">➕ Créer un employé</a>
+</div>
+{% endif %}
+{% endblock %}
+

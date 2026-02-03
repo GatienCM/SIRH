@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">{% if timesheet %}✏️ Modifier la Feuille de Temps{% else %}➕ Nouvelle Feuille de Temps{% endif %}</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        {% if not timesheet %}
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Employé *</label>
+            <select name="employee" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="">-- Sélectionner --</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}">{{ emp.user.get_full_name }} ({{ emp.profession.label }})</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Année *</label>
+                <input type="number" name="year" required min="2020" max="2030" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ current_year|default:2026 }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Mois *</label>
+                <select name="month" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                    <option value="1" {% if current_month == 1 %}selected{% endif %}>Janvier</option>
+                    <option value="2" {% if current_month == 2 %}selected{% endif %}>Février</option>
+                    <option value="3" {% if current_month == 3 %}selected{% endif %}>Mars</option>
+                    <option value="4" {% if current_month == 4 %}selected{% endif %}>Avril</option>
+                    <option value="5" {% if current_month == 5 %}selected{% endif %}>Mai</option>
+                    <option value="6" {% if current_month == 6 %}selected{% endif %}>Juin</option>
+                    <option value="7" {% if current_month == 7 %}selected{% endif %}>Juillet</option>
+                    <option value="8" {% if current_month == 8 %}selected{% endif %}>Août</option>
+                    <option value="9" {% if current_month == 9 %}selected{% endif %}>Septembre</option>
+                    <option value="10" {% if current_month == 10 %}selected{% endif %}>Octobre</option>
+                    <option value="11" {% if current_month == 11 %}selected{% endif %}>Novembre</option>
+                    <option value="12" {% if current_month == 12 %}selected{% endif %}>Décembre</option>
+                </select>
+            </div>
+        </div>
+        {% else %}
+        <div style="padding: 15px; background: #f0f0f0; border-radius: 6px; margin-bottom: 20px;">
+            <p><strong>Employé :</strong> {{ timesheet.employee.user.get_full_name }}</p>
+            <p><strong>Période :</strong> {{ timesheet.month }}/{{ timesheet.year }}</p>
+        </div>
+        {% endif %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Statut</label>
+            <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="draft" {% if timesheet.status == 'draft' %}selected{% endif %}>Brouillon</option>
+                <option value="submitted" {% if timesheet.status == 'submitted' %}selected{% endif %}>Soumis</option>
+                <option value="approved" {% if timesheet.status == 'approved' %}selected{% endif %}>Approuvé</option>
+                <option value="rejected" {% if timesheet.status == 'rejected' %}selected{% endif %}>Rejeté</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Notes</label>
+            <textarea name="notes" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">{% if timesheet %}{{ timesheet.notes|default:'' }}{% endif %}</textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="/timesheets/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
+        </div>
+    </form>
+    
+    {% if timesheet %}
+    <hr style="margin: 40px 0; border: none; border-top: 2px solid #ddd;">
+    
+    <h3 style="margin-top: 30px; color: #667eea;">⚡ Ajustements d'heures (Heures supplémentaires / Réductions)</h3>
+    
+    <!-- Ajouter un ajustement -->
+    {% if timesheet.status == 'draft' or user.is_staff %}
+    <div style="background: #f0f8ff; padding: 20px; border-radius: 6px; margin-bottom: 30px; border-left: 4px solid #667eea;">
+        <h4 style="margin-top: 0;">➕ Ajouter un ajustement</h4>
+        <form method="POST" action="/timesheet/{{ timesheet.id }}/adjustment/add/" style="display: grid; gap: 15px;">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Heures *</label>
+                    <input type="number" name="hours_adjustment" required step="0.5" min="-24" max="24" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Ex: +2.5 ou -1">
+                    <small style="color: #666;">Positif pour ajouter, négatif pour retirer</small>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type d'heures *</label>
+                    <select name="hour_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <option value="normal">Heures normales</option>
+                        <option value="night">Heures de nuit</option>
+                        <option value="sunday">Heures dimanche</option>
+                        <option value="holiday">Heures féries</option>
+                        <option value="overtime" selected>Heures supplémentaires</option>
+                    </select>
+                </div>
+                
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Raison *</label>
+                    <input type="text" name="reason" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" placeholder="Ex: Heures supplémentaires, Erreur de saisie, etc.">
+                </div>
+            </div>
+            
+            <button type="submit" class="btn" style="background-color: #667eea;">➕ Ajouter l'ajustement</button>
+        </form>
+    </div>
+    {% endif %}
+    
+    <!-- Afficher les ajustements -->
+    {% if timesheet.adjustments.all %}
+    <div style="margin-top: 20px;">
+        <h4>📋 Historique des ajustements</h4>
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 10px; text-align: left;">Heures</th>
+                    <th style="padding: 10px; text-align: left;">Type</th>
+                    <th style="padding: 10px; text-align: left;">Raison</th>
+                    <th style="padding: 10px; text-align: left;">Statut</th>
+                    <th style="padding: 10px; text-align: left;">Créé le</th>
+                    <th style="padding: 10px; text-align: left;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for adjustment in timesheet.adjustments.all %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px;">
+                        {% if adjustment.hours_adjustment > 0 %}
+                            <span style="color: green; font-weight: bold;">+{{ adjustment.hours_adjustment }}h</span>
+                        {% else %}
+                            <span style="color: red; font-weight: bold;">{{ adjustment.hours_adjustment }}h</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px;">{{ adjustment.get_hour_type_display }}</td>
+                    <td style="padding: 10px;">{{ adjustment.reason }}</td>
+                    <td style="padding: 10px;">
+                        {% if adjustment.status == 'pending' %}
+                            <span style="background: #fff3cd; padding: 3px 8px; border-radius: 3px; font-size: 0.9em;">⏳ En attente</span>
+                        {% elif adjustment.status == 'approved' %}
+                            <span style="background: #d4edda; padding: 3px 8px; border-radius: 3px; font-size: 0.9em;">✅ Approuvé</span>
+                        {% elif adjustment.status == 'rejected' %}
+                            <span style="background: #f8d7da; padding: 3px 8px; border-radius: 3px; font-size: 0.9em;">❌ Rejeté</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 10px; font-size: 0.9em;">{{ adjustment.created_at|date:"d/m/Y H:i" }}</td>
+                    <td style="padding: 10px;">
+                        {% if adjustment.status == 'pending' %}
+                            {% if user.is_staff %}
+                                <a href="/timesheet/adjustment/{{ adjustment.id }}/approve/" class="btn" style="padding: 5px 10px; font-size: 0.85em; background: #667eea;">⚙️ Traiter</a>
+                            {% endif %}
+                            {% if user.employee and user.employee == timesheet.employee or user.is_staff %}
+                                <a href="/timesheet/adjustment/{{ adjustment.id }}/delete/" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em; margin-left: 5px;" onclick="return confirm('Supprimer cet ajustement ?');">🗑️ Supprimer</a>
+                            {% endif %}
+                        {% elif adjustment.status == 'approved' %}
+                            {% if user.is_staff %}
+                                <a href="/timesheet/adjustment/{{ adjustment.id }}/delete/" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer cet ajustement approuvé ?');">🗑️ Supprimer</a>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="padding: 15px; background: #f5f5f5; border-radius: 6px; text-align: center; color: #666;">
+        Aucun ajustement pour le moment
+    </div>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}

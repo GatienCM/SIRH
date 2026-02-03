@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block header_actions %}
+<a href="{% url 'contract_create' %}" class="btn">➕ Ajouter</a>
+{% endblock %}
+
+{% block content %}
+<div class="search-box">
+    <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+        <select name="status" style="padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px;">
+            <option value="">Tous les statuts</option>
+            <option value="active" {% if status == 'active' %}selected{% endif %}>Actifs</option>
+            <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>Inactifs</option>
+            <option value="expired" {% if status == 'expired' %}selected{% endif %}>Expirés</option>
+        </select>
+        <button type="submit" class="btn">Filtrer</button>
+    </form>
+</div>
+
+{% if contracts %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>👤 Employé</th>
+                <th>📄 Type de Contrat</th>
+                <th>📅 Date Début</th>
+                <th>📅 Date Fin</th>
+                <th>💼 Professionnel</th>
+                <th>📊 Statut</th>
+                <th>⚙️ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for contract in contracts %}
+            <tr>
+                <td><strong>{{ contract.employee.user.get_full_name }}</strong></td>
+                <td>{{ contract.get_contract_type_display }}</td>
+                <td>{{ contract.start_date|date:"d/m/Y" }}</td>
+                <td>{{ contract.end_date|date:"d/m/Y"|default:"CDI" }}</td>
+                <td>{{ contract.employee.profession.label|default:"Non assigné" }}</td>
+                <td>
+                    {% if contract.is_active %}
+                        <span class="badge badge-success">✓ Actif</span>
+                    {% elif contract.end_date < today %}
+                        <span class="badge badge-danger">✗ Expiré</span>
+                    {% else %}
+                        <span class="badge badge-warning">⏳ À venir</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'contract_edit' contract.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    <a href="{% url 'contract_delete' contract.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer ce contrat ?')">🗑️ Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="margin-top: 20px; color: #666; text-align: right;">
+    <strong>Total :</strong> {{ contracts.count }} contrat(s)
+</p>
+{% else %}
+<div class="empty-state">
+    <p>😕 Aucun contrat trouvé</p>
+    <a href="{% url 'contract_create' %}" class="btn">➕ Créer un contrat</a>
+</div>
+{% endif %}
+{% endblock %}

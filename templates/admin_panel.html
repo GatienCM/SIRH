@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 25px; margin-bottom: 30px;">
+    <!-- Statistics Cards -->
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">👨‍💼 Employés Totaux</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #667eea;">{{ stats.total_employees }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">📋 Contrats Actifs</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #667eea;">{{ stats.active_contracts }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">📊 Feuilles de Temps Pendantes</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #764ba2;">{{ stats.pending_timesheets }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">💰 Masse Salariale (Mois)</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #764ba2;">{{ stats.total_payroll }} €</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">🚗 Véhicules Disponibles</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #667eea;">{{ stats.available_vehicles }}</div>
+    </div>
+    
+    <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div style="color: #999; font-size: 0.9em; margin-bottom: 10px;">🔍 Audits Récents</div>
+        <div style="font-size: 2.5em; font-weight: bold; color: #764ba2;">{{ stats.recent_audits }}</div>
+    </div>
+</div>
+
+<!-- Audit Logs Section -->
+<div class="table-container">
+    <h3 style="margin-bottom: 15px; color: #333;">📋 Journaux d'Audit Récents</h3>
+    {% if audit_logs %}
+    <table>
+        <thead>
+            <tr>
+                <th>👤 Utilisateur</th>
+                <th>⚡ Action</th>
+                <th>📦 Objet</th>
+                <th>📅 Date/Heure</th>
+                <th>📝 Détails</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for log in audit_logs %}
+            <tr>
+                <td><strong>{{ log.user.get_full_name }}</strong></td>
+                <td>
+                    {% if log.action == 'CREATE' %}
+                        <span class="badge badge-success">➕ Création</span>
+                    {% elif log.action == 'UPDATE' %}
+                        <span class="badge badge-info">✏️ Modification</span>
+                    {% elif log.action == 'DELETE' %}
+                        <span class="badge badge-danger">🗑️ Suppression</span>
+                    {% else %}
+                        <span class="badge">{{ log.action }}</span>
+                    {% endif %}
+                </td>
+                <td>{{ log.content_type.name }}</td>
+                <td>{{ log.timestamp|date:"d/m/Y H:i" }}</td>
+                <td>{{ log.description|truncatewords:10 }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p style="color: #999; text-align: center; padding: 20px;">Aucun audit récent</p>
+    {% endif %}
+</div>
+
+<!-- Settings Section -->
+<div style="margin-top: 30px;">
+    <h3 style="margin-bottom: 15px; color: #333;">⚙️ Configuration Système</h3>
+    <div class="table-container">
+        {% if settings %}
+        <table>
+            <thead>
+                <tr>
+                    <th>🔧 Paramètre</th>
+                    <th>📝 Valeur</th>
+                    <th>📄 Description</th>
+                    <th>⚙️ Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for setting in settings %}
+                <tr>
+                    <td><strong>{{ setting.key }}</strong></td>
+                    <td>{{ setting.value }}</td>
+                    <td>{{ setting.description }}</td>
+                    <td>
+                        <a href="#" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p style="color: #999; text-align: center; padding: 20px;">Aucun paramètre configuré</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Admin Actions -->
+<div style="margin-top: 30px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
+    <a href="#" class="btn" style="display: block; text-align: center; padding: 15px; font-size: 1em;">
+        📊 Générer Rapports
+    </a>
+    <a href="#" class="btn" style="display: block; text-align: center; padding: 15px; font-size: 1em;">
+        💾 Sauvegarder BD
+    </a>
+    <a href="#" class="btn" style="display: block; text-align: center; padding: 15px; font-size: 1em;">
+        🔄 Synchroniser
+    </a>
+</div>
+{% endblock %}

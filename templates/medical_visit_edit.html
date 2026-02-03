@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier la Visite Médicale{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 0 auto; padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h1 style="margin: 0; color: #1e293b; font-size: 2em;">✏️ Modifier la Visite Médicale</h1>
+        <a href="{% url 'medical_visits' %}" style="padding: 10px 20px; background: linear-gradient(135deg, #64748b 0%, #475569 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 500; transition: all 0.3s;">
+            ← Retour
+        </a>
+    </div>
+
+    <!-- Informations Employé -->
+    <div style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); padding: 20px; border-radius: 12px; margin-bottom: 30px; color: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+        <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Employé</div>
+        <div style="font-size: 1.5em; font-weight: bold;">{{ visit.employee.user.first_name }} {{ visit.employee.user.last_name }}</div>
+        <div style="font-size: 0.9em; opacity: 0.8; margin-top: 5px;">{{ visit.employee.employee_id }} - {{ visit.employee.profession.name }}</div>
+    </div>
+
+    <!-- Formulaire d'édition -->
+    <form method="post" style="background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        {% csrf_token %}
+        
+        <div style="display: grid; gap: 20px;">
+            <!-- Type de visite -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Type de Visite *</label>
+                <select name="visit_type" required style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+                    {% for value, label in visit_types %}
+                    <option value="{{ value }}" {% if visit.visit_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date prévue -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Date Prévue</label>
+                <input type="date" name="scheduled_date" value="{{ visit.scheduled_date|date:'Y-m-d' }}" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 5px;">Laissez vide si la visite n'est pas encore planifiée</div>
+            </div>
+
+            <!-- Statut -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Statut *</label>
+                <select name="status" required style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if visit.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Date d'effectuation -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Date d'Effectuation</label>
+                <input type="date" name="completed_date" value="{% if visit.completed_date %}{{ visit.completed_date|date:'Y-m-d' }}{% endif %}" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 5px;">Date à laquelle la visite a été effectuée</div>
+            </div>
+
+            <!-- Médecin -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Nom du Médecin</label>
+                <input type="text" name="doctor_name" value="{{ visit.doctor_name }}" placeholder="Dr. Dupont" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+            </div>
+
+            <!-- Résultat -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Résultat</label>
+                <select name="result" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+                    <option value="">—</option>
+                    <option value="apte" {% if visit.result == 'apte' %}selected{% endif %}>Apte</option>
+                    <option value="apte_reserve" {% if visit.result == 'apte_reserve' %}selected{% endif %}>Apte avec réserves</option>
+                    <option value="inapte" {% if visit.result == 'inapte' %}selected{% endif %}>Inapte</option>
+                </select>
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 5px;">Le résultat de la visite médicale</div>
+            </div>
+
+            <!-- Date prochaine visite -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Prochaine Visite Prévue</label>
+                <input type="date" name="next_visit_date" value="{% if visit.next_visit_date %}{{ visit.next_visit_date|date:'Y-m-d' }}{% endif %}" style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; transition: all 0.3s;">
+                <div style="font-size: 0.85em; color: #64748b; margin-top: 5px;">Date recommandée pour la prochaine visite</div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label style="display: block; margin-bottom: 8px; color: #1e293b; font-weight: 600; font-size: 1em;">Notes / Observations</label>
+                <textarea name="notes" rows="4" placeholder="Notes et observations..." style="width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1em; font-family: inherit; resize: vertical; transition: all 0.3s;">{{ visit.notes }}</textarea>
+            </div>
+
+            <!-- Boutons -->
+            <div style="display: flex; gap: 15px; margin-top: 10px;">
+                <button type="submit" style="flex: 1; padding: 14px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1em; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    💾 Enregistrer les Modifications
+                </button>
+                <a href="{% url 'medical_visits' %}" style="flex: 1; padding: 14px; background: #f1f5f9; color: #64748b; border: none; border-radius: 8px; font-weight: 600; font-size: 1em; text-decoration: none; text-align: center; transition: all 0.3s; display: inline-block;">
+                    Annuler
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

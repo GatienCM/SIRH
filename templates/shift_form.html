@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">{% if shift %}✏️ Modifier le Quart{% else %}➕ Nouveau Quart{% endif %}</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Employé *</label>
+            <select name="employee" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="">-- Sélectionner un employé --</option>
+                {% for emp in employees %}
+                <option value="{{ emp.id }}" {% if assignment and assignment.employee.id == emp.id %}selected{% endif %}>
+                    {{ emp.user.get_full_name }} ({{ emp.profession.label }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Type de Quart *</label>
+            <select name="shift_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="">-- Sélectionner un type --</option>
+                {% for type in shift_types %}
+                <option value="{{ type.id }}" {% if shift and shift.shift_type.id == type.id %}selected{% endif %}>
+                    {{ type.get_name_display }} ({{ type.start_hour }} - {{ type.end_hour }})
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date *</label>
+            <input type="date" name="date" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ shift.date|date:'Y-m-d'|default:'' }}">
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Heure de début *</label>
+                <input type="time" name="start_time" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ shift.start_time|time:'H:i'|default:'' }}">
+            </div>
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Heure de fin *</label>
+                <input type="time" name="end_time" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;" value="{{ shift.end_time|time:'H:i'|default:'' }}">
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Statut du Quart</label>
+            <select name="status" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="planned" {% if shift.status == 'planned' %}selected{% endif %}>Planifié</option>
+                <option value="ongoing" {% if shift.status == 'ongoing' %}selected{% endif %}>En cours</option>
+                <option value="completed" {% if shift.status == 'completed' %}selected{% endif %}>Complété</option>
+                <option value="cancelled" {% if shift.status == 'cancelled' %}selected{% endif %}>Annulé</option>
+            </select>
+        </div>
+
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Statut de l'Assignation Employé *</label>
+            <select name="assignment_status" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="assigned" {% if assignment and assignment.status == 'assigned' %}selected{% endif %}>📋 Assigné</option>
+                <option value="confirmed" {% if assignment and assignment.status == 'confirmed' %}selected{% endif %}>✅ Confirmé</option>
+                <option value="in_progress" {% if assignment and assignment.status == 'in_progress' %}selected{% endif %}>▶️ En cours</option>
+                <option value="completed" {% if assignment and assignment.status == 'completed' %}selected{% endif %}>✔️ Complété</option>
+                <option value="absent" {% if assignment and assignment.status == 'absent' %}selected{% endif %}>❌ Absent</option>
+                <option value="cancelled" {% if assignment and assignment.status == 'cancelled' %}selected{% endif %}>🚫 Annulé</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Notes</label>
+            <textarea name="notes" rows="4" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">{{ shift.notes|default:'' }}</textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn">💾 Enregistrer</button>
+            <a href="/planning/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

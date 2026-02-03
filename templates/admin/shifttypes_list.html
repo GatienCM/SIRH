@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}Gestion des Types de Quart - Sansoucy SIRH{% endblock %}
+
+{% block content %}
+<div style="padding: 20px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">⏰ Gestion des Types de Quart</h2>
+        <a href="{% url 'shifttype_create' %}" style="background: #667eea; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">➕ Nouveau Type</a>
+    </div>
+
+    {% if shifttypes %}
+    <div style="background: white; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                    <th style="padding: 12px; text-align: left;">Nom</th>
+                    <th style="padding: 12px; text-align: center;">Heure de début</th>
+                    <th style="padding: 12px; text-align: center;">Heure de fin</th>
+                    <th style="padding: 12px; text-align: center;">Heures de base</th>
+                    <th style="padding: 12px; text-align: center;">Statut</th>
+                    <th style="padding: 12px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for shifttype in shifttypes %}
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 12px;"><strong>{{ shifttype.name }}</strong></td>
+                    <td style="padding: 12px; text-align: center;">{{ shifttype.start_hour }}</td>
+                    <td style="padding: 12px; text-align: center;">{{ shifttype.end_hour }}</td>
+                    <td style="padding: 12px; text-align: center;">{{ shifttype.base_hours }}h</td>
+                    <td style="padding: 12px; text-align: center;">
+                        {% if shifttype.is_active %}
+                            <span style="background: #4CAF50; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Actif</span>
+                        {% else %}
+                            <span style="background: #999; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px;">Inactif</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; text-align: center;">
+                        <a href="{% url 'shifttype_edit' shifttype.id %}" style="color: #667eea; text-decoration: none; margin-right: 10px;">✏️ Éditer</a>
+                        <a href="{% url 'shifttype_delete' shifttype.id %}" style="color: #f44336; text-decoration: none;" onclick="return confirm('Êtes-vous sûr ?');">🗑️ Supprimer</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div style="background: #f5f5f5; padding: 20px; border-radius: 4px; text-align: center; color: #999;">
+        <p>Aucun type de quart défini. <a href="{% url 'shifttype_create' %}" style="color: #667eea;">Créer un type</a></p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

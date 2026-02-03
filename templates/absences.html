@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block page_title %}📋 Gestion des Absences{% endblock %}
+
+{% block content %}
+<div style="max-width: 1400px; margin: 0 auto; padding: 20px;">
+    <h1 style="color: #333; margin-bottom: 30px;">📋 Gestion des Absences</h1>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div style="margin-bottom: 20px;">
+        {% for message in messages %}
+        <div style="background: {% if message.tags %}#4CAF50{% else %}#2196F3{% endif %}; color: white; padding: 15px; border-radius: 4px; margin-bottom: 10px;">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Statistiques -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px;">
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="font-size: 28px; font-weight: bold; color: #667eea;">{{ stats.total_absences }}</div>
+            <div style="color: #999; font-size: 14px; margin-top: 5px;">Absences totales</div>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="font-size: 28px; font-weight: bold; color: #f44336;">{{ stats.absences_today }}</div>
+            <div style="color: #999; font-size: 14px; margin-top: 5px;">Absences aujourd'hui</div>
+        </div>
+        <div style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+            <div style="font-size: 28px; font-weight: bold; color: #667eea;">{{ stats.employees_active }}</div>
+            <div style="color: #999; font-size: 14px; margin-top: 5px;">Employés actifs</div>
+        </div>
+    </div>
+
+    <!-- Formulaire création -->
+    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 30px;">
+        <h2 style="margin-top: 0; color: #333;">➕ Créer une Absence</h2>
+        <form method="POST" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+            {% csrf_token %}
+            
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Employé *</label>
+                <select name="employee" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">-- Sélectionner un employé --</option>
+                    {% for emp in employees %}
+                    <option value="{{ emp.id }}">{{ emp.user.first_name }} {{ emp.user.last_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Date de début *</label>
+                <input type="date" name="date_start" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Date de fin *</label>
+                <input type="date" name="date_end" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+            </div>
+
+            <div>
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Type d'absence *</label>
+                <select name="absence_type" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                    <option value="">-- Sélectionner --</option>
+                    {% for code, label in absence_types %}
+                    <option value="{{ code }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <label style="display: block; margin-bottom: 5px; color: #333; font-weight: 500;">Notes (certificat, justificatif, etc.)</label>
+                <textarea name="notes" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: Arial, sans-serif;"></textarea>
+            </div>
+
+            <div style="grid-column: 1 / -1;">
+                <button type="submit" style="background: #667eea; color: white; padding: 12px 30px; border: none; border-radius: 4px; cursor: pointer; font-weight: 600; transition: background 0.3s;">
+                    ✅ Créer l'absence
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Liste des absences -->
+    <div style="background: white; padding: 25px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <h2 style="margin-top: 0; color: #333; margin-bottom: 20px;">📅 Absences Récentes</h2>
+        
+        {% if absences %}
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f5f5f5; border-bottom: 2px solid #ddd;">
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Employé</th>
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Type</th>
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Début</th>
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Fin</th>
+                        <th style="padding: 15px; text-align: center; color: #333; font-weight: 600;">Durée</th>
+                        <th style="padding: 15px; text-align: left; color: #333; font-weight: 600;">Notes</th>
+                        <th style="padding: 15px; text-align: center; color: #333; font-weight: 600;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for absence in absences %}
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 12px 15px;">
+                            <strong>{{ absence.employee.user.first_name }} {{ absence.employee.user.last_name }}</strong>
+                        </td>
+                        <td style="padding: 12px 15px;">
+                            <span style="background: #667eea; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600;">
+                                {{ absence.get_absence_type_display }}
+                            </span>
+                        </td>
+                        <td style="padding: 12px 15px;">{{ absence.date_start }}</td>
+                        <td style="padding: 12px 15px;">{{ absence.date_end }}</td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            <strong>{{ absence.duration_days }} jour{% if absence.duration_days > 1 %}s{% endif %}</strong>
+                        </td>
+                        <td style="padding: 12px 15px; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                            {% if absence.notes %}
+                            <small style="color: #666;">{{ absence.notes }}</small>
+                            {% else %}
+                            <small style="color: #999;">-</small>
+                            {% endif %}
+                        </td>
+                        <td style="padding: 12px 15px; text-align: center;">
+                            <form method="POST" action="{% url 'absence_delete' absence.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" style="background: #f44336; color: white; padding: 6px 12px; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;" onclick="return confirm('Confirmer la suppression ?');">
+                                    🗑️ Supprimer
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: #999; text-align: center; padding: 40px;">Aucune absence enregistrée</p>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+button:hover {
+    opacity: 0.9;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+</style>
+
+{% endblock %}

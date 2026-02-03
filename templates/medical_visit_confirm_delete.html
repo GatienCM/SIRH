@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer la Visite Médicale{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 50px auto; padding: 20px;">
+    <div style="background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); text-align: center;">
+        <div style="font-size: 4em; margin-bottom: 20px;">⚠️</div>
+        <h1 style="color: #1e293b; font-size: 1.8em; margin-bottom: 15px;">Confirmer la Suppression</h1>
+        <p style="color: #64748b; font-size: 1.1em; margin-bottom: 30px;">
+            Êtes-vous sûr de vouloir supprimer cette visite médicale ?
+        </p>
+
+        <!-- Détails de la visite -->
+        <div style="background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px; text-align: left;">
+            <div style="margin-bottom: 10px;">
+                <span style="color: #64748b; font-size: 0.9em;">Employé :</span>
+                <span style="color: #1e293b; font-weight: 600; margin-left: 10px;">
+                    {{ visit.employee.user.first_name }} {{ visit.employee.user.last_name }}
+                </span>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <span style="color: #64748b; font-size: 0.9em;">Type :</span>
+                <span style="color: #1e293b; font-weight: 600; margin-left: 10px;">
+                    {{ visit.get_visit_type_display }}
+                </span>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <span style="color: #64748b; font-size: 0.9em;">Date :</span>
+                <span style="color: #1e293b; font-weight: 600; margin-left: 10px;">
+                    {% if visit.scheduled_date %}
+                        {{ visit.scheduled_date|date:"d/m/Y" }}
+                    {% else %}
+                        Non planifiée
+                    {% endif %}
+                </span>
+            </div>
+            <div>
+                <span style="color: #64748b; font-size: 0.9em;">Statut :</span>
+                <span style="color: #1e293b; font-weight: 600; margin-left: 10px;">
+                    {{ visit.get_status_display }}
+                </span>
+            </div>
+        </div>
+
+        <form method="post" style="display: flex; gap: 15px; justify-content: center;">
+            {% csrf_token %}
+            <button type="submit" style="padding: 14px 30px; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1em; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                🗑️ Confirmer la Suppression
+            </button>
+            <a href="{% url 'medical_visits' %}" style="padding: 14px 30px; background: #f1f5f9; color: #64748b; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 1em; transition: all 0.3s; display: inline-block;">
+                Annuler
+            </a>
+        </form>
+
+        <p style="color: #94a3b8; font-size: 0.85em; margin-top: 20px; margin-bottom: 0;">
+            Cette action est irréversible
+        </p>
+    </div>
+</div>
+{% endblock %}

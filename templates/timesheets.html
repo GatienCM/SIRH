@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block header_actions %}
+<a href="{% url 'timesheet_create' %}" class="btn">➕ Ajouter</a>
+{% endblock %}
+
+{% block content %}
+<div class="search-box">
+    <form method="GET" style="display: flex; gap: 10px; width: 100%;">
+        <select name="status" style="padding: 10px 15px; border: 1px solid #ddd; border-radius: 6px;">
+            <option value="">Tous les statuts</option>
+            <option value="draft" {% if status == 'draft' %}selected{% endif %}>Brouillon</option>
+            <option value="submitted" {% if status == 'submitted' %}selected{% endif %}>Soumis</option>
+            <option value="approved" {% if status == 'approved' %}selected{% endif %}>Approuvé</option>
+            <option value="rejected" {% if status == 'rejected' %}selected{% endif %}>Rejeté</option>
+        </select>
+        <button type="submit" class="btn">Filtrer</button>
+    </form>
+</div>
+
+{% if timesheets %}
+<div class="table-container">
+    <table>
+        <thead>
+            <tr>
+                <th>👤 Employé</th>
+                <th>📅 Mois</th>
+                <th>⏱️ Heures Totales</th>
+                <th>📊 Statut</th>
+                <th>💬 Commentaire</th>
+                <th>⚙️ Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for timesheet in timesheets %}
+            <tr>
+                <td><strong>{{ timesheet.employee.user.get_full_name }}</strong></td>
+                <td>{{ timesheet.month|stringformat:"02d" }}/{{ timesheet.year }}</td>
+                <td>{{ timesheet.total_hours|default:"0" }} h</td>
+                <td>
+                    {% if timesheet.status == 'draft' %}
+                        <span class="badge badge-info">Brouillon</span>
+                    {% elif timesheet.status == 'submitted' %}
+                        <span class="badge badge-warning">Soumis</span>
+                    {% elif timesheet.status == 'approved' %}
+                        <span class="badge badge-success">Approuvé</span>
+                    {% else %}
+                        <span class="badge badge-danger">Rejeté</span>
+                    {% endif %}
+                </td>
+                <td>{{ timesheet.notes|truncatewords:5|default:"--" }}</td>
+                <td>
+                    <a href="{% url 'timesheet_auto_fill' timesheet.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;" title="Remplir automatiquement à partir des quarts">🔄 Remplir</a>
+                    <a href="{% url 'timesheet_edit' timesheet.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    <a href="{% url 'timesheet_delete' timesheet.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer cette feuille ?')">🗑️ Supprimer</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<p style="margin-top: 20px; color: #666; text-align: right;">
+    <strong>Total :</strong> {{ timesheets.count }} feuille(s) de temps
+</p>
+{% else %}
+<div class="empty-state">
+    <p>😕 Aucune feuille de temps trouvée</p>
+    <a href="{% url 'timesheet_create' %}" class="btn">➕ Créer une feuille de temps</a>
+</div>
+{% endif %}
+{% endblock %}

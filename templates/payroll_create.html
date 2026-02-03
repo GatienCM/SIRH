@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-container">
+    <h2 style="margin-bottom: 20px;">➕ Créer des Feuilles de Paie</h2>
+    
+    <form method="POST">
+        {% csrf_token %}
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Année *</label>
+            <input type="number" name="year" required min="2000" max="2100" value="{{ current_year }}" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Mois *</label>
+            <select name="month" required style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <option value="1" {% if current_month == 1 %}selected{% endif %}>Janvier</option>
+                <option value="2" {% if current_month == 2 %}selected{% endif %}>Février</option>
+                <option value="3" {% if current_month == 3 %}selected{% endif %}>Mars</option>
+                <option value="4" {% if current_month == 4 %}selected{% endif %}>Avril</option>
+                <option value="5" {% if current_month == 5 %}selected{% endif %}>Mai</option>
+                <option value="6" {% if current_month == 6 %}selected{% endif %}>Juin</option>
+                <option value="7" {% if current_month == 7 %}selected{% endif %}>Juillet</option>
+                <option value="8" {% if current_month == 8 %}selected{% endif %}>Août</option>
+                <option value="9" {% if current_month == 9 %}selected{% endif %}>Septembre</option>
+                <option value="10" {% if current_month == 10 %}selected{% endif %}>Octobre</option>
+                <option value="11" {% if current_month == 11 %}selected{% endif %}>Novembre</option>
+                <option value="12" {% if current_month == 12 %}selected{% endif %}>Décembre</option>
+            </select>
+        </div>
+        
+        <div style="padding: 15px; background: #e3f2fd; border-radius: 6px; margin-bottom: 20px;">
+            <p style="margin: 0;">💡 Les feuilles de paie seront générées pour tous les employés actifs qui ont une feuille de temps pour cette période.</p>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 30px;">
+            <button type="submit" class="btn">💾 Générer</button>
+            <a href="/payroll/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
