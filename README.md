@@ -1,7 +1,153 @@
 # SIRH - Système d'Information Ressources Humaines
 
+🚀 **Système complet de gestion RH pour le secteur du transport sanitaire**
 
-Projet Django pour gestion RH du transport sanitaire.
+Plateforme Django moderne incluant la gestion des employés, planning, feuilles de temps, contrats, véhicules et paie conforme URSSAF 2026.
+
+---
+
+## 📦 Installation depuis GitHub
+
+### Prérequis
+
+- **Python 3.10+** ([Télécharger](https://www.python.org/downloads/))
+- **Git** ([Télécharger](https://git-scm.com/downloads))
+- **Un éditeur de code** (VS Code recommandé)
+
+### 1️⃣ Cloner le projet
+
+```bash
+git clone https://github.com/GatienCM/SIRH.git
+cd SIRH
+```
+
+### 2️⃣ Créer l'environnement virtuel
+
+**Windows :**
+```bash
+python -m venv venv
+venv\Scripts\activate
+```
+
+**macOS/Linux :**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+### 3️⃣ Installer les dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+### 4️⃣ Configurer la base de données
+
+```bash
+# Créer les tables de la base de données
+python manage.py migrate
+
+# Créer un compte administrateur
+python manage.py createsuperuser
+
+# Initialiser les cotisations sociales (URSSAF 2026)
+python manage.py seed
+```
+
+### 5️⃣ Lancer le serveur
+
+```bash
+python manage.py runserver
+```
+
+🌐 Accédez à l'application : **http://127.0.0.1:8000/**
+
+---
+
+## 🔄 Travailler depuis un autre ordinateur
+
+### Récupérer les dernières modifications
+
+```bash
+git pull origin main
+```
+
+### Envoyer vos modifications
+
+```bash
+# Ajouter tous les fichiers modifiés
+git add .
+
+# Créer un commit avec un message descriptif
+git commit -m "Description de vos modifications"
+
+# Envoyer vers GitHub
+git push origin main
+```
+
+### ⚠️ Important : Synchronisation de la base de données
+
+Le fichier `db.sqlite3` (base de données) n'est **pas synchronisé sur GitHub** pour des raisons de sécurité.
+
+**Options :**
+
+1. **Recommencer avec une base vide** (sur le nouvel ordinateur) :
+   ```bash
+   python manage.py migrate
+   python manage.py createsuperuser
+   python manage.py seed
+   ```
+
+2. **Copier la base de données existante** :
+   - Copier `db.sqlite3` depuis l'ancien ordinateur
+   - Le placer dans le dossier racine du projet sur le nouvel ordinateur
+
+---
+
+## 📋 Modules & Fonctionnalités
+
+### 👥 **Gestion des Employés**
+- Fiches employés complètes (identité, contact, profession)
+- Gestion des documents (contrats, attestations, certificats)
+- Suivi des visites médicales
+- Professions paramétrables
+
+### 📅 **Planning & Shifts**
+- Création de quarts de travail (types personnalisables)
+- Assignation des employés
+- Vue calendrier complète
+- Gestion des statuts (planifié, en cours, complété)
+
+### ⏱️ **Feuilles de Temps**
+- Saisie des heures par type (normales, nuit, dimanche, férié, supplémentaires)
+- Système d'ajustements et validation
+- Export des données
+- Calcul automatique des heures
+
+### 💰 **Gestion de la Paie**
+- Calcul automatique des cotisations sociales URSSAF 2026
+- Support des assiettes abattues (CSG/CRDS 98.25%)
+- Gestion des tranches (T1/T2)
+- Variables de paie personnalisables
+- Taux de cotisation : 22.55% (≤ PMSS) / 16.65% (> PMSS)
+
+### 📄 **Contrats**
+- Création de contrats de travail
+- Types de contrats (CDI, CDD, Intérim, etc.)
+- Suivi des avenants
+- Gestion des services de santé au travail
+
+### 🚗 **Véhicules**
+- Flotte de véhicules
+- Suivi des entretiens
+- Assignations
+
+### 🔐 **Authentification & Rôles**
+- 3 rôles : Admin, Manager, Employé
+- Portail employé dédié
+- Permissions granulaires
+
+---
 
 ## 🆕 Nouveautés principales (2026)
 
@@ -46,11 +192,159 @@ sirh_project/
 └── manage.py
 ```
 
-## 🚀 Installation & Démarrage
+## 🚀 Démarrage rapide (après installation)
 
-### Prérequis
-- Python 3.11+
-- pip
+```bash
+# Activer l'environnement virtuel
+venv\Scripts\activate  # Windows
+source venv/bin/activate  # macOS/Linux
+
+# Lancer le serveur
+python manage.py runserver
+```
+
+Accédez à : **http://127.0.0.1:8000/**
+
+---
+
+## 🛠️ Commandes utiles
+
+### Gestion de la base de données
+```bash
+# Créer une migration après modification des models
+python manage.py makemigrations
+
+# Appliquer les migrations
+python manage.py migrate
+
+# Réinitialiser les cotisations sociales
+python manage.py seed
+```
+
+### Gestion des utilisateurs
+```bash
+# Créer un superutilisateur
+python manage.py createsuperuser
+
+# Accéder à l'admin Django
+# http://127.0.0.1:8000/admin/
+```
+
+### Tests
+```bash
+# Lancer tous les tests
+python manage.py test
+
+# Tests d'un module spécifique
+python manage.py test employees
+```
+
+---
+
+## 💡 Guide de démarrage
+
+### Première utilisation
+
+1. **Créer un compte admin** via `createsuperuser`
+2. **Initialiser les cotisations** avec `python manage.py seed`
+3. **Se connecter** sur http://127.0.0.1:8000/
+4. **Créer des professions** (Admin > Professions)
+5. **Ajouter des employés** (Employés > Ajouter)
+6. **Créer des types de quarts** (Admin > Types de Quarts)
+7. **Planifier des shifts** (Planning > Ajouter)
+
+### Workflow typique
+
+1. **Planning** : Créer des quarts et assigner des employés
+2. **Feuilles de temps** : Les employés soumettent leurs heures
+3. **Validation** : Les managers approuvent les feuilles de temps
+4. **Paie** : Générer les bulletins de paie basés sur les heures validées
+
+---
+
+## 🔐 Rôles et permissions
+
+| Rôle | Accès |
+|------|-------|
+| **Admin** | Accès complet à tous les modules, gestion des utilisateurs |
+| **Manager** | Gestion planning, validation feuilles de temps, consultation paie |
+| **Employee** | Portail employé : consultation planning, soumission feuilles de temps, accès documents personnels |
+
+---
+
+## 📊 Module Paie - Conformité URSSAF 2026
+
+Le module de paie est **100% conforme** aux taux URSSAF 2026 :
+
+### Cotisations Salariales
+- **Vieillesse plafonnée** : 6.90% (sur 1×PMSS = 3864€)
+- **Vieillesse déplafonnée** : 0.40% (totalité du salaire)
+- **Assurance chômage** : 2.40% (sur 4×PMSS = 15456€)
+- **Retraite complémentaire T1** : 3.15% (sur 1×PMSS)
+- **CEG T1** : 0.86% (sur 1×PMSS)
+- **CSG déductible** : 6.80% sur assiette à 98.25% = 6.68% effectif
+- **CSG non déductible** : 2.40% sur assiette à 98.25% = 2.36% effectif
+- **CRDS** : 0.50% sur assiette à 98.25% = 0.49% effectif
+
+### Taux effectifs
+- **Salaire ≤ 3864€** : ~22.55% de cotisations
+- **Salaire > 3864€** : ~16.65% (grâce aux plafonnements)
+
+---
+
+## 🤝 Contribution
+
+### Workflow Git recommandé
+
+```bash
+# Créer une branche pour votre fonctionnalité
+git checkout -b feature/nouvelle-fonctionnalite
+
+# Faire vos modifications...
+
+# Commiter vos changements
+git add .
+git commit -m "Ajout de [fonctionnalité]"
+
+# Pousser vers GitHub
+git push origin feature/nouvelle-fonctionnalite
+
+# Créer une Pull Request sur GitHub
+```
+
+---
+
+## 📝 Technologies utilisées
+
+- **Backend** : Django 4.2.8
+- **Frontend** : HTML5, CSS3, JavaScript
+- **Base de données** : SQLite (dev) / PostgreSQL (prod recommandée)
+- **API** : Django REST Framework
+- **Authentification** : Django Auth + rôles personnalisés
+
+---
+
+## 📄 Licence
+
+Ce projet est développé pour un usage interne. Tous droits réservés.
+
+---
+
+## 🆘 Support
+
+En cas de problème :
+
+1. Vérifier que toutes les dépendances sont installées : `pip install -r requirements.txt`
+2. Vérifier que les migrations sont à jour : `python manage.py migrate`
+3. Consulter les logs du serveur pour les erreurs
+4. Vérifier la section **Guides & FAQ** dans l'application
+
+---
+
+## 📞 Contact
+
+**Projet SIRH** - Système de gestion RH pour transport sanitaire
+Développé avec Django & Python
 
 ### Étapes
 
