@@ -1567,6 +1567,7 @@ def vehicle_delete(request, vehicle_id):
 # PORTAIL SALARIÉ
 @login_required(login_url='login')
 @employee_required
+@login_required(login_url='login')
 def employee_portal(request):
     """Portail personnel du salarié"""
     # Récupérer les données de l'employé connecté
@@ -1576,7 +1577,7 @@ def employee_portal(request):
     
     if not employee:
         messages.error(request, '❌ Profil employé non trouvé.')
-        return redirect('dashboard')
+        return redirect('login')
     
     today = date.today()
     current_month = today.month
@@ -1922,6 +1923,8 @@ def employee_documents_view(request):
 
 @login_required(login_url='login')
 @admin_required
+@login_required(login_url='login')
+@admin_required
 def medical_visits_view(request):
     """Gestion des visites médicales"""
     from employees.models import MedicalVisit
@@ -1943,6 +1946,7 @@ def medical_visits_view(request):
         employee_id = request.POST.get('employee')
         visit_type = request.POST.get('visit_type')
         scheduled_date = request.POST.get('scheduled_date') or None
+        status = request.POST.get('status', 'to_schedule')
         notes = request.POST.get('notes', '')
         try:
             employee = Employee.objects.get(id=employee_id)
@@ -1961,7 +1965,7 @@ def medical_visits_view(request):
                 scheduled_date=scheduled_date,
                 doctor_name=doctor_name,
                 notes=notes,
-                status='scheduled' if scheduled_date else 'to_schedule'
+                status=status
             )
             visit.save()
             messages.success(request, f'✅ Visite médicale créée pour {employee.user.first_name} {employee.user.last_name}')

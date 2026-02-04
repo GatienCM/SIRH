@@ -11,7 +11,7 @@ def admin_required(view_func):
             return redirect('login')
         if request.user.role not in ['admin', 'rh']:
             messages.error(request, '❌ Accès refusé. Cette section est réservée aux administrateurs.')
-            return redirect('dashboard')
+            return redirect('login')
         return view_func(request, *args, **kwargs)
     return wrapper
 
@@ -23,7 +23,7 @@ def employee_required(view_func):
             return redirect('login')
         if request.user.role != 'employee':
             messages.error(request, '❌ Accès refusé. Cette section est réservée aux salariés.')
-            return redirect('dashboard')
+            return redirect('login')
         return view_func(request, *args, **kwargs)
     return wrapper
 
