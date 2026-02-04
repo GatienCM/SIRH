@@ -660,6 +660,7 @@ def payroll_create(request):
     """Générer les feuilles de paie pour le mois en cours"""
     from datetime import date
     from decimal import Decimal
+    from django.db.models import Q
     
     if request.method == 'POST':
         year = int(request.POST.get('year', date.today().year))
@@ -676,22 +677,24 @@ def payroll_create(request):
                 employee=employee,
                 year=year,
                 month=month,
-                status__in=['submitted', 'approved']
+                status__in=['submitted', 'approved', 'paid']
             ).first()
             
             if not timesheet:
                 continue
             
             # Récupérer le contrat actif pour le taux horaire
-            active_contract = None
             today = date.today()
-            for contract in Contract.objects.filter(employee=employee, end_date__gte=today):
-                if contract.hourly_rate:
-                    active_contract = contract
-                    break
+            active_contract = (
+                Contract.objects.filter(employee=employee, status='active')
+                .filter(Q(end_date__isnull=True) | Q(end_date__gte=today))
+                .filter(Q(start_date__isnull=True) | Q(start_date__lte=today))
+                .order_by('-start_date')
+                .first()
+            )
             
             if not active_contract or not active_contract.hourly_rate:
-                payrolls_errors.append(f'{employee.user.get_full_name()}: pas de contrat actif')
+                payrolls_errors.append(f'{employee.user.get_full_name()}: pas de contrat actif ou taux horaire')
                 continue  # Pas de contrat actif avec taux horaire
             
             # Créer ou récupérer la fiche de paie

@@ -2,6 +2,7 @@ from django.db import models
 from django.db.models import Sum, Q
 from django.utils import timezone
 from datetime import timedelta, time
+from decimal import Decimal
 from employees.models import Employee
 from planning.models import Assignment, ShiftType
 from accounts.models import CustomUser
@@ -128,15 +129,17 @@ class TimeSheet(models.Model):
         from contracts.models import Contract
         
         # Récupérer le contrat actif de l'employé pour le taux horaire
-        active_contract = None
         today = datetime.now().date()
-        for contract in Contract.objects.filter(employee=self.employee, end_date__gte=today):
-            if contract.hourly_rate:
-                active_contract = contract
-                break
+        active_contract = (
+            Contract.objects.filter(employee=self.employee, status='active')
+            .filter(Q(end_date__isnull=True) | Q(end_date__gte=today))
+            .filter(Q(start_date__isnull=True) | Q(start_date__lte=today))
+            .order_by('-start_date')
+            .first()
+        )
         
-        if not active_contract or not active_contract.hourly_rate:
-            return 0  # Pas de contrat actif ou pas de taux horaire
+        # Utiliser un taux horaire par défaut si absent
+        hourly_rate = active_contract.hourly_rate if active_contract and active_contract.hourly_rate else Decimal('0.00')
         
         # Récupérer le nombre de jours dans le mois
         days_in_month = monthrange(self.year, self.month)[1]
@@ -181,7 +184,7 @@ class TimeSheet(models.Model):
                 date=shift.date,
                 hour_type=hour_type,
                 hours_worked=hours,
-                hourly_rate=active_contract.hourly_rate,
+                hourly_rate=hourly_rate,
                 notes=f"Auto-généré du quart {shift.shift_type}"
             )
             entries_created += 1
