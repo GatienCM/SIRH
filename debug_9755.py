@@ -25,7 +25,7 @@ salaire_brut = Decimal('9755.00')
 total_cotisations = Decimal('0.00')
 
 print(f"💶 Salaire brut : {salaire_brut}€")
-print(f"📅 PMSS 2026 : 3864€/mois")
+print(f"📅 PMSS 2026 : 4005€/mois")
 print()
 print("=" * 100)
 print("COTISATIONS SALARIALES ACTIVES")
@@ -79,11 +79,11 @@ print("=" * 100)
 print()
 
 calcul_theorique = {
-    'Vieillesse plafonnée (T1)': {'taux': Decimal('6.90'), 'assiette': min(salaire_brut, Decimal('3864.00'))},
+    'Vieillesse plafonnée (T1)': {'taux': Decimal('6.90'), 'assiette': min(salaire_brut, Decimal('4005.00'))},
     'Vieillesse déplafonnée': {'taux': Decimal('0.40'), 'assiette': salaire_brut},
-    'Assurance chômage': {'taux': Decimal('2.40'), 'assiette': min(salaire_brut, Decimal('15456.00'))},
-    'Retraite complémentaire T1': {'taux': Decimal('3.15'), 'assiette': min(salaire_brut, Decimal('3864.00'))},
-    'CEG T1': {'taux': Decimal('0.86'), 'assiette': min(salaire_brut, Decimal('3864.00'))},
+    'Assurance chômage': {'taux': Decimal('2.40'), 'assiette': min(salaire_brut, Decimal('16020.00'))},
+    'Retraite complémentaire T1': {'taux': Decimal('3.15'), 'assiette': min(salaire_brut, Decimal('4005.00'))},
+    'CEG T1': {'taux': Decimal('0.86'), 'assiette': min(salaire_brut, Decimal('4005.00'))},
     'CSG déductible (98.25%)': {'taux': Decimal('6.80'), 'assiette': salaire_brut * Decimal('0.9825')},
     'CSG non déductible (98.25%)': {'taux': Decimal('2.40'), 'assiette': salaire_brut * Decimal('0.9825')},
     'CRDS (98.25%)': {'taux': Decimal('0.50'), 'assiette': salaire_brut * Decimal('0.9825')},

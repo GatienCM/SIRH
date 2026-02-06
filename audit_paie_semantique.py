@@ -29,24 +29,12 @@ for cotis in csg_crds:
         problemes_assiette.append(f"❌ {cotis.name} : a un plafond alors qu'elle devrait être déplafonnée")
     else:
         print(f"✅ {cotis.name} : déplafonnée (correct)")
-    
-    # Vérifier si le taux est déjà ajusté ou si c'est le taux brut
-    if cotis.name == 'CSG déductible':
-        if cotis.rate == Decimal('6.80'):
-            problemes_assiette.append(f"⚠️  {cotis.name} : taux 6.80% appliqué sur 100% brut au lieu de 98.25%")
-            print(f"   → Taux effectif réel : {cotis.rate * Decimal('0.9825'):.2f}% (au lieu de 6.80%)")
-        elif cotis.rate == Decimal('6.68'):
-            print(f"✅ {cotis.name} : taux ajusté 6.68% (correct pour application sur 100%)")
-    
-    if cotis.name == 'CSG non déductible':
-        if cotis.rate == Decimal('2.40'):
-            problemes_assiette.append(f"⚠️  {cotis.name} : taux 2.40% appliqué sur 100% brut au lieu de 98.25%")
-            print(f"   → Taux effectif réel : {cotis.rate * Decimal('0.9825'):.2f}% (au lieu de 2.40%)")
-    
-    if cotis.name == 'CRDS':
-        if cotis.rate == Decimal('0.50'):
-            problemes_assiette.append(f"⚠️  {cotis.name} : taux 0.50% appliqué sur 100% brut au lieu de 98.25%")
-            print(f"   → Taux effectif réel : {cotis.rate * Decimal('0.9825'):.2f}% (au lieu de 0.50%)")
+
+    # Vérifier le type d'assiette (abattue 98.25%)
+    if cotis.assiette_type != 'ABATTUE_9825':
+        problemes_assiette.append(f"⚠️  {cotis.name} : assiette_type {cotis.assiette_type} au lieu de ABATTUE_9825")
+    else:
+        print(f"✅ {cotis.name} : assiette abattue 98.25% (correct)")
 
 # 🚨 VÉRIFICATION 2 : VIEILLESSE - DOUBLE LIGNE OBLIGATOIRE
 print("\n📐 AXIOME_VIEILLESSE : Double ligne obligatoire (plafonnée + déplafonnée)")
@@ -75,7 +63,7 @@ else:
 print("\n📐 AXIOME_TRANCHE : AGIRC-ARRCO T1 [0→1×PMSS] et T2 [1×PMSS→8×PMSS]")
 print("-" * 100)
 
-PMSS = Decimal('3864.00')  # 2026
+PMSS = Decimal('4005.00')  # 2026
 
 agirc_t1 = PayrollContribution.objects.filter(
     name__icontains='Retraite complémentaire T1',
@@ -111,13 +99,17 @@ else:
 print("\n📐 AXIOME_CALCUL_TRANCHE : Le code gère-t-il correctement les tranches ?")
 print("-" * 100)
 
-print("❌ PROBLÈME MAJEUR DÉTECTÉ :")
-print("   Le modèle actuel calcule : min(salaire, plafond) × taux")
-print("   Pour les tranches, il faudrait :")
-print("   - T1 : min(salaire, 3864) × taux_T1")
-print("   - T2 : max(0, min(salaire, 30912) - 3864) × taux_T2")
-print("   ")
-print("   ⚠️  IMPACT : Les salaires > 3864€ ne paient pas correctement T2")
+# Vérification de la cohérence de la tranche T2
+if agirc_t2 and agirc_t2.tranche_min and agirc_t2.ceiling:
+    if agirc_t2.tranche_min == PMSS and agirc_t2.ceiling == PMSS * 8:
+        print("✅ Calcul T2 : paramètres cohérents (tranche_min=PMSS, plafond=8×PMSS)")
+        print("   Formule attendue : max(0, min(salaire, 8×PMSS) - 1×PMSS)")
+    else:
+        problemes_tranches.append(
+            f"⚠️  T2 : tranche_min={agirc_t2.tranche_min}€ / plafond={agirc_t2.ceiling}€ (attendu {PMSS}€ / {PMSS * 8}€)"
+        )
+else:
+    problemes_tranches.append("⚠️  T2 : tranche_min/plafond non configurés")
 
 # 🚨 VÉRIFICATION 5 : PLAFONDS COHÉRENTS
 print("\n📐 AXIOME_PLAFOND : Vérification des plafonds 2026")
@@ -209,26 +201,20 @@ print("🎯 RECOMMANDATIONS PRINCIPALES")
 print("=" * 100)
 
 print("""
-1️⃣  CSG/CRDS : Créer une assiette abattue à 98.25%
-   → Actuellement : calcul direct sur 100% du brut
-   → Solution : Ajouter un champ 'assiette_type' avec valeur 'ABATTUE_9825'
+1️⃣  CONFORMITÉ : CSG/CRDS sur assiette abattue 98.25%
+    → Déjà en place via assiette_type=ABATTUE_9825
 
-2️⃣  TRANCHES : Implémenter la logique de calcul par tranche
-   → Actuellement : min(salaire, plafond) pour tout
-   → Solution : Détecter les cotisations T2 et calculer la portion entre plafonds
+2️⃣  TRANCHES : T1/T2 alignées sur PMSS
+    → Paramètres T2 contrôlés (tranche_min=PMSS, plafond=8×PMSS)
 
-3️⃣  EXPLICABILITÉ : Ajouter des métadonnées sur chaque cotisation
-   → organisme : URSSAF, AGIRC_ARRCO, etc.
-   → deductible_fiscalement : True/False
-   → type_assiette : BRUT, ABATTUE, PLAFONNEE
+3️⃣  EXPLICABILITÉ : Métadonnées présentes
+    → organisme, deductible_fiscalement, assiette_type
 
-4️⃣  VALIDATION : Ajouter des checks automatiques
-   → Vérifier double ligne vieillesse
-   → Vérifier cohérence plafonds
-   → Alerter si assiette > plafond
+4️⃣  PROCHAINE ÉTAPE : Déductibilité fiscale
+    → Appliquer l’impact fiscal dans les calculs nets (optionnel)
 
-5️⃣  TAUX EFFECTIFS : Clarifier dans les descriptions
-   → CSG déductible : "6.80% sur 98.25% brut = 6.68% effectif"
+5️⃣  QUALITÉ : Tests de non‑régression
+    → Simulations salariales mensuelles (PMSS, 4×PMSS, 8×PMSS)
 """)
 
 print("\n✅ Audit terminé - Score de cohérence : " + 

@@ -24,7 +24,7 @@ for c in actives_salariales:
 
 print(f"\nTotal taux sans plafond: {total_sans_plafond:.2f}%")
 print(f"Total taux avec plafond: {total_avec_plafond:.2f}%")
-print(f"Taux effectif estimé (sur salaire standard <3864€): {total_sans_plafond + total_avec_plafond:.2f}%")
+print(f"Taux effectif estimé (sur salaire standard <4005€): {total_sans_plafond + total_avec_plafond:.2f}%")
 
 print("\n" + "=" * 80)
 print("SIMULATION: 9755.85€ brut")

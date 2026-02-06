@@ -28,6 +28,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='payrollcontribution',
             name='tranche_min',
-            field=models.DecimalField(blank=True, decimal_places=2, help_text='Pour les cotisations par tranche (ex: T2 commence à 3864€)', max_digits=10, null=True, verbose_name='Tranche min (€)'),
+            field=models.DecimalField(blank=True, decimal_places=2, help_text='Pour les cotisations par tranche (ex: T2 commence à 4005€)', max_digits=10, null=True, verbose_name='Tranche min (€)'),
         ),
     ]

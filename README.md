@@ -277,9 +277,9 @@ python manage.py test employees
 Le module de paie est **100% conforme** aux taux URSSAF 2026 :
 
 ### Cotisations Salariales
-- **Vieillesse plafonnée** : 6.90% (sur 1×PMSS = 3864€)
+- **Vieillesse plafonnée** : 6.90% (sur 1×PMSS = 4005€)
 - **Vieillesse déplafonnée** : 0.40% (totalité du salaire)
-- **Assurance chômage** : 2.40% (sur 4×PMSS = 15456€)
+- **Assurance chômage** : 2.40% (sur 4×PMSS = 16020€)
 - **Retraite complémentaire T1** : 3.15% (sur 1×PMSS)
 - **CEG T1** : 0.86% (sur 1×PMSS)
 - **CSG déductible** : 6.80% sur assiette à 98.25% = 6.68% effectif
@@ -287,8 +287,8 @@ Le module de paie est **100% conforme** aux taux URSSAF 2026 :
 - **CRDS** : 0.50% sur assiette à 98.25% = 0.49% effectif
 
 ### Taux effectifs
-- **Salaire ≤ 3864€** : ~22.55% de cotisations
-- **Salaire > 3864€** : ~16.65% (grâce aux plafonnements)
+- **Salaire ≤ 4005€** : ~22.55% de cotisations
+- **Salaire > 4005€** : ~16.65% (grâce aux plafonnements)
 
 ---
 

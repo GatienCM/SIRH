@@ -54,14 +54,14 @@ if contribution.tranche_min:
     applicable_base = max(0, tranche_haute - tranche_min)
     montant = applicable_base × rate
     
-# Exemple T2 (tranche_min = 3864€) :
-# Salaire 9755€ → assiette T2 = min(9755, 30912) - 3864 = 5891€
+# Exemple T2 (tranche_min = 4005€) :
+# Salaire 9755€ → assiette T2 = min(9755, 32040) - 4005 = 5750€
 ```
 
 ✅ **Configuration** :
-- Retraite T2 : tranche_min = 3864€ ✓
-- CEG T2 : tranche_min = 3864€ ✓
-- Plafonds : 3864€ (1×PMSS) → 30912€ (8×PMSS) ✓
+- Retraite T2 : tranche_min = 4005€ ✓
+- CEG T2 : tranche_min = 4005€ ✓
+- Plafonds : 4005€ (1×PMSS) → 32040€ (8×PMSS) ✓
 
 ---
 
@@ -72,7 +72,7 @@ if contribution.tranche_min:
 | Champ | Type | Valeurs possibles | Usage |
 |-------|------|-------------------|-------|
 | `assiette_type` | Choice | `BRUT`, `ABATTUE_9825`, `PLAFONNEE` | Détermine la base de calcul |
-| `tranche_min` | Decimal | `None`, `3864.00` (PMSS) | Pour les cotisations T2 |
+| `tranche_min` | Decimal | `None`, `4005.00` (PMSS) | Pour les cotisations T2 |
 | `organisme` | Choice | `URSSAF`, `AGIRC_ARRCO`, `POLE_EMPLOI`, `AUTRE` | Collecteur de la cotisation |
 | `deductible_fiscalement` | Boolean | `True`, `False` | Impact impôt sur le revenu |
 
@@ -92,8 +92,8 @@ if contribution.tranche_min:
 {
     'name': 'Retraite complémentaire T2',
     'rate': Decimal('8.64'),
-    'ceiling': Decimal('30912.00'),
-    'tranche_min': Decimal('3864.00'),  # ← Nouveau
+    'ceiling': Decimal('32040.00'),
+    'tranche_min': Decimal('4005.00'),  # ← Nouveau
     'organisme': 'AGIRC_ARRCO',         # ← Nouveau
     'assiette_type': 'PLAFONNEE'        # ← Nouveau
 }
@@ -129,12 +129,12 @@ Détail CSG/CRDS :
   • CSG non déductible : 230.02€ (taux effectif: 2.3580%) ✅
 
 Détail retraite :
-  • Vieillesse plafonnée (T1) : 266.62€ (sur 3864€ max) ✅
+    • Vieillesse plafonnée (T1) : 266.62€ (sur 4005€ max) ✅
   • Vieillesse déplafonnée : 39.02€ (sur totalité) ✅
 ```
 
 **Pourquoi 16.65% au lieu de 22%?**  
-C'est **NORMAL** ! Les cotisations plafonnées (vieillesse 6.90%, retraite 3.15%, etc.) ne s'appliquent que sur les premiers 3864€. Au-delà, seules les cotisations déplafonnées s'appliquent. Plus le salaire est élevé, plus le taux effectif diminue.
+C'est **NORMAL** ! Les cotisations plafonnées (vieillesse 6.90%, retraite 3.15%, etc.) ne s'appliquent que sur les premiers 4005€. Au-delà, seules les cotisations déplafonnées s'appliquent. Plus le salaire est élevé, plus le taux effectif diminue.
 
 ---
 
@@ -216,12 +216,12 @@ deductible_fiscalement = models.BooleanField(default=False)
 ### ✅ AXIOM_TRANCHE
 > "T1 = [0 → 1×PMSS] et T2 = [1×PMSS → 8×PMSS]"
 
-**Implémenté** : Champ `tranche_min=3864` pour T2
+**Implémenté** : Champ `tranche_min=4005` pour T2
 
 ### ✅ AXIOM_PLAFOND
-> "PMSS 2026 = 3864€/mois"
+> "PMSS 2026 = 4005€/mois"
 
-**Implémenté** : Tous les plafonds vérifiés (3864€, 15456€, 30912€)
+**Implémenté** : Tous les plafonds vérifiés (4005€, 16020€, 32040€)
 
 ### ✅ CONCEPT_FISCAL
 > "Seule la CSG déductible réduit le revenu imposable"

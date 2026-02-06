@@ -362,15 +362,15 @@ class Payroll(models.Model):
             
             # 2️⃣ APPLIQUER LES PLAFONDS ET TRANCHES
             if contribution.tranche_min:
-                # Cotisation par TRANCHE (ex: T2 = entre 3864€ et 30912€)
+                # Cotisation par TRANCHE (ex: T2 = entre 4005€ et 32040€)
                 if contribution.ceiling:
                     # Tranche entre min et max
-                    tranche_haute = min(self.gross_salary, contribution.ceiling)
+                    tranche_haute = min(assiette_base, contribution.ceiling)
                     tranche_basse = contribution.tranche_min
                     applicable_base = max(Decimal('0'), tranche_haute - tranche_basse)
                 else:
                     # Tranche au-dessus du min sans limite
-                    applicable_base = max(Decimal('0'), self.gross_salary - contribution.tranche_min)
+                    applicable_base = max(Decimal('0'), assiette_base - contribution.tranche_min)
             elif contribution.ceiling:
                 # Cotisation PLAFONNÉE (ex: vieillesse, retraite T1)
                 applicable_base = min(assiette_base, contribution.ceiling)
@@ -520,7 +520,7 @@ class PayrollContribution(models.Model):
         blank=True,
         null=True,
         verbose_name="Tranche min (€)",
-        help_text="Pour les cotisations par tranche (ex: T2 commence à 3864€)"
+        help_text="Pour les cotisations par tranche (ex: T2 commence à 4005€)"
     )
     
     organisme = models.CharField(

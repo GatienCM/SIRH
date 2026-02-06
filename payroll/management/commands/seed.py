@@ -4,10 +4,12 @@ from payroll.models import PayrollVariable, PayrollContribution
 
 
 class Command(BaseCommand):
-    help = "Seed payroll variables and contributions with French legal rates"
-
     def handle(self, *args, **options):
         self.stdout.write(self.style.SUCCESS("🔄 Initialisation des variables et cotisations obligatoires..."))
+
+        PMSS = Decimal('4005.00')
+        PASS_4 = PMSS * 4
+        PASS_8 = PMSS * 8
 
         # ========== VARIABLES DE PAIE ==========
         variables = [
@@ -84,7 +86,7 @@ class Command(BaseCommand):
         ]
 
         # ========== COTISATIONS SOCIALES OBLIGATOIRES ==========
-        # Plafond Sécurité Sociale Mensuel 2026 : 3 864€
+        # Plafond Sécurité Sociale Mensuel 2026 : 4 005€
         # Source : URSSAF & Décret annuel du plafond SS
         
         contributions = [
@@ -94,7 +96,7 @@ class Command(BaseCommand):
             {
                 'name': 'Vieillesse plafonnée (T1)',
                 'rate': Decimal('6.90'),
-                'ceiling': Decimal('3864.00'),  # 1 PASS mensuel 2026
+                'ceiling': Decimal('4005.00'),  # 1 PASS mensuel 2026
                 'description': 'Assurance vieillesse de base - tranche 1 (≤ PASS)',
                 'is_active': True,
                 'is_patronal': False,
@@ -120,14 +122,19 @@ class Command(BaseCommand):
             {
                 'name': 'Assurance chômage',
                 'rate': Decimal('2.40'),
-                'ceiling': Decimal('15456.00'),  # 4 PASS mensuel
+                'ceiling': PASS_4,  # 4 PASS mensuel
                 'description': 'Pôle Emploi - contribution salarié (≤ 4 PASS)',
                 'is_active': True,
                 'is_patronal': False,
                 'assiette_type': 'PLAFONNEE',
+                'tranche_min': None,
+                'organisme': 'POLE_EMPLOI',
+                'deductible_fiscalement': False
+            },
+            {
                 'name': 'Retraite complémentaire T1',
                 'rate': Decimal('3.15'),
-                'ceiling': Decimal('3864.00'),  # Tranche 1 : ≤ 1 PASS
+                'ceiling': PMSS,  # Tranche 1 : ≤ 1 PASS
                 'description': 'Agirc-Arrco tranche 1 (≤ PASS) - taux contractuel 6.20% dont 3.15% salarié',
                 'is_active': True,
                 'is_patronal': False,
@@ -139,19 +146,19 @@ class Command(BaseCommand):
             {
                 'name': 'Retraite complémentaire T2',
                 'rate': Decimal('8.64'),
-                'ceiling': Decimal('30912.00'),  # Tranche 2 : entre 1 et 8 PASS
+                'ceiling': PASS_8,  # Tranche 2 : entre 1 et 8 PASS
                 'description': 'Agirc-Arrco tranche 2 (1-8 PASS) - taux contractuel 17.00% dont 8.64% salarié',
-                'is_active': False,  # À activer pour salaires > 3864€
+                'is_active': False,  # À activer pour salaires > 4005€
                 'is_patronal': False,
                 'assiette_type': 'PLAFONNEE',
-                'tranche_min': Decimal('3864.00'),  # Commence au-dessus de T1
+                'tranche_min': PMSS,  # Commence au-dessus de T1
                 'organisme': 'AGIRC_ARRCO',
                 'deductible_fiscalement': True
             },
             {
                 'name': 'CEG (Contribution d\'Équilibre Général)',
                 'rate': Decimal('0.86'),
-                'ceiling': Decimal('3864.00'),  # T1 uniquement
+                'ceiling': PMSS,  # T1 uniquement
                 'description': 'Contribution équilibre général Agirc-Arrco T1',
                 'is_active': True,
                 'is_patronal': False,
@@ -163,11 +170,16 @@ class Command(BaseCommand):
             {
                 'name': 'CEG T2',
                 'rate': Decimal('1.08'),
-                'ceiling': Decimal('30912.00'),  # T2
+                'ceiling': PASS_8,  # T2
                 'description': 'Contribution équilibre général Agirc-Arrco T2',
-                'is_active': False,  # À activer pour salaires > 3864€
+                'is_active': False,  # À activer pour salaires > 4005€
                 'is_patronal': False,
                 'assiette_type': 'PLAFONNEE',
+                'tranche_min': PMSS,
+                'organisme': 'AGIRC_ARRCO',
+                'deductible_fiscalement': True
+            },
+            {
                 'name': 'CSG déductible',
                 'rate': Decimal('6.80'),
                 'ceiling': None,
@@ -241,7 +253,7 @@ class Command(BaseCommand):
             {
                 'name': 'Vieillesse plafonnée patronale',
                 'rate': Decimal('8.55'),
-                'ceiling': Decimal('3864.00'),
+                'ceiling': PMSS,
                 'description': 'Assurance vieillesse patronale - tranche 1 (≤ PASS)',
                 'is_active': True,
                 'is_patronal': True,
@@ -278,7 +290,7 @@ class Command(BaseCommand):
             {
                 'name': 'Assurance chômage patronale',
                 'rate': Decimal('4.05'),
-                'ceiling': Decimal('15456.00'),  # 4 PASS
+                'ceiling': PASS_4,  # 4 PASS
                 'description': 'Pôle Emploi - contribution employeur (≤ 4 PASS)',
                 'is_active': True,
                 'is_patronal': True,
@@ -291,7 +303,7 @@ class Command(BaseCommand):
             {
                 'name': 'AGS (Garantie des salaires)',
                 'rate': Decimal('0.15'),
-                'ceiling': Decimal('15456.00'),  # 4 PASS
+                'ceiling': PASS_4,  # 4 PASS
                 'description': 'Association pour la Gestion du régime de garantie des Salaires',
                 'is_active': True,
                 'is_patronal': True,
@@ -304,7 +316,7 @@ class Command(BaseCommand):
             {
                 'name': 'Retraite complémentaire T1 patronale',
                 'rate': Decimal('4.72'),
-                'ceiling': Decimal('3864.00'),
+                'ceiling': PMSS,
                 'description': 'Agirc-Arrco T1 patronal (taux total 6.20% - part patronale 4.72%)',
                 'is_active': True,
                 'is_patronal': True,
@@ -315,19 +327,19 @@ class Command(BaseCommand):
             {
                 'name': 'Retraite complémentaire T2 patronale',
                 'rate': Decimal('12.95'),
-                'ceiling': Decimal('30912.00'),
+                'ceiling': PASS_8,
                 'description': 'Agirc-Arrco T2 patronal (taux total 17.00% - part patronale 12.95%)',
                 'is_active': False,
                 'is_patronal': True,
                 'assiette_type': 'PLAFONNEE',
-                'tranche_min': Decimal('3864.00'),
+                'tranche_min': PMSS,
                 'organisme': 'AGIRC_ARRCO',
                 'deductible_fiscalement': False
             },
             {
                 'name': 'CEG patronale T1',
                 'rate': Decimal('1.29'),
-                'ceiling': Decimal('3864.00'),
+                'ceiling': PMSS,
                 'description': 'Contribution équilibre général Agirc-Arrco T1 - part patronale',
                 'is_active': True,
                 'is_patronal': True,
@@ -338,12 +350,12 @@ class Command(BaseCommand):
             {
                 'name': 'CEG patronale T2',
                 'rate': Decimal('1.62'),
-                'ceiling': Decimal('30912.00'),
+                'ceiling': PASS_8,
                 'description': 'Contribution équilibre général Agirc-Arrco T2 - part patronale',
                 'is_active': False,
                 'is_patronal': True,
                 'assiette_type': 'PLAFONNEE',
-                'tranche_min': Decimal('3864.00'),
+                'tranche_min': PMSS,
                 'organisme': 'AGIRC_ARRCO',
                 'deductible_fiscalement': False
             },
@@ -352,7 +364,7 @@ class Command(BaseCommand):
             {
                 'name': 'FNAL tranche 1',
                 'rate': Decimal('0.10'),
-                'ceiling': Decimal('3864.00'),
+                'ceiling': PMSS,
                 'description': 'FNAL - Fonds National d\'Aide au Logement (≤ PASS)',
                 'is_active': True,
                 'is_patronal': True,
