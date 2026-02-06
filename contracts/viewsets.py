@@ -13,6 +13,10 @@ class ContractViewSet(viewsets.ModelViewSet):
     queryset = Contract.objects.all()
     serializer_class = ContractSerializer
     permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsRH(), IsAdmin()]
+        return [IsAuthenticated()]
     filterset_fields = ['employee', 'contract_type', 'status']
     search_fields = ['contract_number', 'employee__employee_id']
     

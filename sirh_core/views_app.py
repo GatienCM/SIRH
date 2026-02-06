@@ -553,7 +553,7 @@ def employees_view(request):
 @login_required(login_url='login')
 def planning_view(request):
     """Vue du planning"""
-    from datetime import datetime, time
+    from django.utils import timezone
     
     shifts = Shift.objects.select_related('shift_type').prefetch_related('assignments').all()
     
@@ -563,23 +563,15 @@ def planning_view(request):
         shifts = shifts.filter(date=date_filter)
     
     # Préparer les données des quarts avec les flags calculés
-    now = datetime.now()
-    current_time = now.time()
-    current_date = now.date()
-    
     shifts_data = []
     for shift in shifts:
         is_cancelled = shift.status == 'cancelled'
-        is_in_progress = (
-            not is_cancelled and
-            shift.date == current_date and
-            shift.start_time <= current_time <= shift.end_time
-        )
-        # Un quart est passé SEULEMENT si la date est avant aujourd'hui OU si c'est aujourd'hui mais l'heure est passée
-        is_past = (not is_cancelled) and ((shift.date < current_date) or (shift.date == current_date and shift.end_time < current_time))
+        is_in_progress = (not is_cancelled) and shift.is_ongoing
+        # Un quart est passé si l'heure de fin est dépassée (gère les quarts de nuit)
+        is_past = (not is_cancelled) and shift.is_past
         
         # Mettre à jour automatiquement les assignments à "completed" s'ils n'étaient pas annulés/absents et que le shift n'est pas annulé
-        if is_past and shift.date < current_date and shift.status != 'cancelled':  # Uniquement pour les quarts vraiment passés (hier ou avant)
+        if is_past and shift.status != 'cancelled':
             for assignment in shift.assignments.all():
                 if assignment.status in ['assigned', 'confirmed', 'in_progress']:
                     assignment.status = 'completed'
@@ -607,6 +599,17 @@ def timesheets_view(request):
     """Vue des feuilles de temps"""
     timesheets = TimeSheet.objects.select_related('employee__user').all()
     
+    # Limiter la visibilité pour les employés
+    if request.user.role == 'employee':
+        employee = Employee.objects.filter(user=request.user).first()
+        if not employee:
+            messages.error(request, '❌ Profil employé introuvable.')
+            return redirect('dashboard')
+        timesheets = timesheets.filter(employee=employee)
+    elif request.user.role not in ['admin', 'rh', 'manager']:
+        messages.error(request, '❌ Accès non autorisé.')
+        return redirect('dashboard')
+    
     # Filtrer par statut
     status_filter = request.GET.get('status', '')
     if status_filter:
@@ -616,6 +619,7 @@ def timesheets_view(request):
         'user': request.user,
         'timesheets': timesheets,
         'status_filter': status_filter,
+        'status': status_filter,
         'page_title': '⏱️ Feuilles de Temps',
     }
     
@@ -1039,6 +1043,8 @@ def employee_create(request):
             errors.append('Le nom est obligatoire')
         if not profession_id:
             errors.append('La profession est obligatoire')
+        if not request.POST.get('employee_id', '').strip():
+            errors.append('Le matricule salarié est obligatoire')
         
         # Vérifier si username existe déjà
         if username and CustomUser.objects.filter(username=username).exists():
@@ -1224,13 +1230,17 @@ def employee_delete(request, employee_id):
     """Supprimer un employé"""
     employee = get_object_or_404(Employee, id=employee_id)
     name = employee.user.get_full_name()
-    employee.user.delete()  # Cascade delete
+    user = employee.user
+    employee.delete()
+    if user:
+        user.delete()
     messages.success(request, f'✅ Employé {name} supprimé avec succès !')
     return redirect('employees')
 
 
 # CRUD Planning/Shifts
 @login_required(login_url='login')
+@admin_required
 def shift_create(request):
     if request.method == 'POST':
         try:
@@ -1277,6 +1287,7 @@ def shift_create(request):
 
 
 @login_required(login_url='login')
+@admin_required
 def shift_edit(request, shift_id):
     shift = get_object_or_404(Shift, id=shift_id)
     assignment = shift.assignments.first()  # Récupérer la première assignation
@@ -1321,6 +1332,7 @@ def shift_edit(request, shift_id):
 
 
 @login_required(login_url='login')
+@admin_required
 def shift_delete(request, shift_id):
     shift = get_object_or_404(Shift, id=shift_id)
     shift.delete()
@@ -1330,6 +1342,7 @@ def shift_delete(request, shift_id):
 
 # CRUD Timesheets
 @login_required(login_url='login')
+@admin_required
 def timesheet_create(request):
     from datetime import date as date_module
     
@@ -1380,6 +1393,14 @@ def timesheet_create(request):
 @login_required(login_url='login')
 def timesheet_edit(request, timesheet_id):
     timesheet = get_object_or_404(TimeSheet, id=timesheet_id)
+    if request.user.role == 'employee':
+        employee = Employee.objects.filter(user=request.user).first()
+        if not employee or timesheet.employee_id != employee.id:
+            messages.error(request, '❌ Accès non autorisé à cette feuille de temps.')
+            return redirect('timesheets')
+        if timesheet.status != 'draft':
+            messages.error(request, '❌ Seules les feuilles en brouillon peuvent être modifiées.')
+            return redirect('timesheets')
     if request.method == 'POST':
         timesheet.status = request.POST.get('status')
         timesheet.notes = request.POST.get('notes', '')
@@ -1393,16 +1414,26 @@ def timesheet_edit(request, timesheet_id):
 @login_required(login_url='login')
 def timesheet_delete(request, timesheet_id):
     timesheet = get_object_or_404(TimeSheet, id=timesheet_id)
+    if request.user.role == 'employee':
+        messages.error(request, '❌ Vous ne pouvez pas supprimer une feuille de temps.')
+        return redirect('timesheets')
     timesheet.delete()
     messages.success(request, '✅ Feuille supprimée avec succès !')
     return redirect('timesheets')
 
 
 @login_required(login_url='login')
-@admin_required
 def timesheet_auto_fill(request, timesheet_id):
     """Auto-remplir une feuille de temps à partir des quarts"""
     timesheet = get_object_or_404(TimeSheet, id=timesheet_id)
+    if request.user.role == 'employee':
+        employee = Employee.objects.filter(user=request.user).first()
+        if not employee or timesheet.employee_id != employee.id:
+            messages.error(request, '❌ Accès non autorisé à cette feuille de temps.')
+            return redirect('timesheets')
+    elif request.user.role not in ['admin', 'rh', 'manager']:
+        messages.error(request, '❌ Accès non autorisé.')
+        return redirect('timesheets')
     
     entries_created = timesheet.auto_fill_from_assignments()
     
@@ -1418,26 +1449,30 @@ def timesheet_auto_fill(request, timesheet_id):
 @login_required(login_url='login')
 def contract_create(request):
     if request.method == 'POST':
-        contract = Contract.objects.create(
-            employee_id=request.POST.get('employee'),
-            contract_number=request.POST.get('contract_number'),
-            contract_type=request.POST.get('contract_type'),
-            status=request.POST.get('status', 'active'),
-            contract_status=request.POST.get('contract_status', 'trial'),
-            start_date=request.POST.get('start_date'),
-            end_date=request.POST.get('end_date') or None,
-            trial_end_date=request.POST.get('trial_end_date') or None,
-            working_hours_per_week=request.POST.get('working_hours_per_week', 35),
-            hourly_rate=request.POST.get('hourly_rate') or None,
-            monthly_salary=request.POST.get('monthly_salary') or None,
-            occupational_health_service=request.POST.get('occupational_health_service', ''),
-            collective_agreement=request.POST.get('collective_agreement', 'Convention collective du transport sanitaire'),
-            collective_agreement_date=request.POST.get('collective_agreement_date') or None,
-            notes=request.POST.get('notes', ''),
-            created_by=request.user
-        )
-        messages.success(request, '✅ Contrat créé avec succès !')
-        return redirect('contracts')
+        from django.core.exceptions import ValidationError
+        try:
+            contract = Contract.objects.create(
+                employee_id=request.POST.get('employee'),
+                contract_number=request.POST.get('contract_number'),
+                contract_type=request.POST.get('contract_type'),
+                status=request.POST.get('status', 'active'),
+                contract_status=request.POST.get('contract_status', 'trial'),
+                start_date=request.POST.get('start_date'),
+                end_date=request.POST.get('end_date') or None,
+                trial_end_date=request.POST.get('trial_end_date') or None,
+                working_hours_per_week=request.POST.get('working_hours_per_week', 35),
+                hourly_rate=request.POST.get('hourly_rate') or None,
+                monthly_salary=request.POST.get('monthly_salary') or None,
+                occupational_health_service=request.POST.get('occupational_health_service', ''),
+                collective_agreement=request.POST.get('collective_agreement', 'Convention collective du transport sanitaire'),
+                collective_agreement_date=request.POST.get('collective_agreement_date') or None,
+                notes=request.POST.get('notes', ''),
+                created_by=request.user
+            )
+            messages.success(request, '✅ Contrat créé avec succès !')
+            return redirect('contracts')
+        except ValidationError as e:
+            messages.error(request, f"❌ Erreur : {', '.join(e.messages)}")
     
     employees = Employee.objects.all()
     return render(request, 'contract_form.html', {'employees': employees, 'page_title': '➕ Nouveau Contrat'})

@@ -119,7 +119,7 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         # Manager voit les demandes de son équipe
         if user.role == 'manager' and hasattr(user, 'employee'):
             # TODO: Implémenter la logique d'équipe
-            return LeaveRequest.objects.all()
+            return LeaveRequest.objects.filter(employee=user.employee)
         
         # Employé voit seulement ses demandes
         if hasattr(user, 'employee'):
@@ -133,6 +133,21 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
             serializer.save(employee=self.request.user.employee)
         else:
             raise serializers.ValidationError("Utilisateur non associé à un employé")
+
+    def _adjust_balance(self, leave_request, direction):
+        """Ajuster le solde de congés (direction=1 pour déduire, -1 pour restaurer)"""
+        balance, _ = TimeOffBalance.objects.get_or_create(
+            employee=leave_request.employee,
+            year=leave_request.start_date.year
+        )
+        days = leave_request.days_requested
+        if leave_request.leave_type == 'vacation':
+            balance.vacation_days_taken += days * direction
+        elif leave_request.leave_type == 'sick':
+            balance.sick_days_taken += days * direction
+        else:
+            balance.other_days_taken += days * direction
+        balance.save()
     
     @action(detail=False, methods=['get'])
     def my_requests(self, request):
@@ -158,6 +173,12 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     def approve(self, request, pk=None):
         """Approuver une demande de congé"""
         leave_request = self.get_object()
+        if request.user.role == 'manager' and hasattr(request.user, 'employee'):
+            if leave_request.employee != request.user.employee:
+                return Response(
+                    {'error': 'Accès non autorisé pour ce manager'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         
         if leave_request.status != 'pending':
             return Response(
@@ -170,6 +191,9 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
         if hasattr(request.user, 'employee'):
             leave_request.approved_by = request.user.employee
         leave_request.save()
+
+        # Mettre à jour le solde de congés
+        self._adjust_balance(leave_request, direction=1)
         
         # Créer une notification
         Notification.objects.create(
@@ -186,6 +210,12 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
     def reject(self, request, pk=None):
         """Refuser une demande de congé"""
         leave_request = self.get_object()
+        if request.user.role == 'manager' and hasattr(request.user, 'employee'):
+            if leave_request.employee != request.user.employee:
+                return Response(
+                    {'error': 'Accès non autorisé pour ce manager'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
         
         if leave_request.status != 'pending':
             return Response(
@@ -230,9 +260,15 @@ class LeaveRequestViewSet(viewsets.ModelViewSet):
                 {'error': 'Seule une demande en attente ou approuvée peut être annulée'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+        was_approved = leave_request.status == 'approved'
         
         leave_request.status = 'cancelled'
         leave_request.save()
+
+        # Restaurer le solde si la demande était approuvée
+        if was_approved:
+            self._adjust_balance(leave_request, direction=-1)
         
         serializer = LeaveRequestSerializer(leave_request)
         return Response(serializer.data)
@@ -243,6 +279,11 @@ class TimeOffBalanceViewSet(viewsets.ModelViewSet):
     queryset = TimeOffBalance.objects.all()
     serializer_class = TimeOffBalanceSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsRH(), IsAdmin()]
+        return [IsAuthenticated()]
     
     def get_queryset(self):
         """Filtrer les soldes selon l'utilisateur"""
@@ -301,15 +342,23 @@ class DocumentViewSet(viewsets.ModelViewSet):
     
     def perform_create(self, serializer):
         """Créer un document"""
-        if hasattr(self.request.user, 'employee'):
-            # Si employee_id n'est pas fourni, utiliser l'employé connecté
-            if 'employee_id' not in self.request.data:
+        user = self.request.user
+        if user.role in ['admin', 'rh']:
+            employee_id = self.request.data.get('employee_id')
+            if employee_id:
                 serializer.save(
-                    employee=self.request.user.employee,
-                    uploaded_by=self.request.user.employee
+                    employee_id=employee_id,
+                    uploaded_by=user.employee if hasattr(user, 'employee') else None
                 )
             else:
-                serializer.save(uploaded_by=self.request.user.employee)
+                serializer.save(uploaded_by=user.employee if hasattr(user, 'employee') else None)
+            return
+
+        if hasattr(user, 'employee'):
+            serializer.save(
+                employee=user.employee,
+                uploaded_by=user.employee
+            )
         else:
             raise serializers.ValidationError("Utilisateur non associé à un employé")
     

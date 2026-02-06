@@ -13,6 +13,10 @@ class VehicleViewSet(viewsets.ModelViewSet):
     queryset = Vehicle.objects.all()
     serializer_class = VehicleSerializer
     permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsRH(), IsAdmin(), IsManager()]
+        return [IsAuthenticated()]
     filterset_fields = ['vehicle_type', 'status']
     search_fields = ['vehicle_id', 'registration_number', 'brand', 'model']
     

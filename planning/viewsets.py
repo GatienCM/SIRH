@@ -25,6 +25,10 @@ class ShiftViewSet(viewsets.ModelViewSet):
     queryset = Shift.objects.all()
     serializer_class = ShiftSerializer
     permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'cancel']:
+            return [IsRH(), IsAdmin()]
+        return [IsAuthenticated()]
     filterset_fields = ['date', 'status', 'shift_type']
     search_fields = ['notes']
     ordering_fields = ['date', 'start_time', 'created_at']
@@ -101,6 +105,10 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
     permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy', 'confirm', 'mark_absent', 'mark_completed']:
+            return [IsRH(), IsAdmin()]
+        return [IsAuthenticated()]
     filterset_fields = ['shift__date', 'employee', 'status', 'vehicle']
     search_fields = ['employee__user__first_name', 'employee__user__last_name', 'notes']
     ordering_fields = ['shift__date', 'status', 'created_at']

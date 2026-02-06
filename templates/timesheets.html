@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block header_actions %}
+{% if request.user.role != 'employee' %}
 <a href="{% url 'timesheet_create' %}" class="btn">➕ Ajouter</a>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -52,7 +54,9 @@
                 <td>
                     <a href="{% url 'timesheet_auto_fill' timesheet.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;" title="Remplir automatiquement à partir des quarts">🔄 Remplir</a>
                     <a href="{% url 'timesheet_edit' timesheet.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em;">✏️ Éditer</a>
+                    {% if request.user.role != 'employee' %}
                     <a href="{% url 'timesheet_delete' timesheet.id %}" class="btn btn-secondary" style="padding: 5px 10px; font-size: 0.85em;" onclick="return confirm('Supprimer cette feuille ?')">🗑️ Supprimer</a>
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

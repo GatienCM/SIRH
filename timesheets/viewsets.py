@@ -60,10 +60,23 @@ class TimeSheetViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND
             )
     
-    @action(detail=True, methods=['post'], permission_classes=[IsRH | IsAdmin])
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def submit(self, request, pk=None):
         """Soumettre une feuille de temps"""
         timesheet = self.get_object()
+        if request.user.role == 'employee':
+            try:
+                employee = Employee.objects.get(user=request.user)
+                if timesheet.employee_id != employee.id:
+                    return Response(
+                        {'error': 'Accès non autorisé'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            except Employee.DoesNotExist:
+                return Response(
+                    {'error': 'Employé non trouvé'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
         if timesheet.status != 'draft':
             return Response(
                 {'error': 'Seules les brouillons peuvent être soumis'},
@@ -163,6 +176,21 @@ class TimeSheetEntryViewSet(viewsets.ModelViewSet):
                 {'error': 'Feuille de temps non trouvée'},
                 status=status.HTTP_404_NOT_FOUND
             )
+
+        # Contrôle d'accès : employé uniquement sur sa propre feuille
+        if request.user.role == 'employee':
+            try:
+                employee = Employee.objects.get(user=request.user)
+                if timesheet.employee_id != employee.id:
+                    return Response(
+                        {'error': 'Accès non autorisé'},
+                        status=status.HTTP_403_FORBIDDEN
+                    )
+            except Employee.DoesNotExist:
+                return Response(
+                    {'error': 'Employé non trouvé'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
         
         # Récupérer tous les assignments du mois
         from planning.models import Assignment
@@ -176,7 +204,7 @@ class TimeSheetEntryViewSet(viewsets.ModelViewSet):
             employee=timesheet.employee,
             shift__date__gte=first_day,
             shift__date__lte=last_day,
-            status='completed'
+            status__in=['assigned', 'confirmed', 'in_progress', 'completed']
         )
         
         created_count = 0

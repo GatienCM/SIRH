@@ -137,13 +137,8 @@ class PayrollViewSet(viewsets.ModelViewSet):
         # Calculer le salaire brut
         payroll.calculate_salary(salary_scale)
         
-        # Calculer les déductions
-        social_security_rate = request.data.get('social_security_rate', 0.08)
-        tax_rate = request.data.get('tax_rate', 0.05)
-        payroll.calculate_deductions(
-            social_security_rate=social_security_rate,
-            tax_rate=tax_rate
-        )
+        # Calculer les déductions selon les règles légales
+        payroll.calculate_with_payroll_rules()
         
         payroll.status = 'calculated'
         payroll.calculated_at = timezone.now()

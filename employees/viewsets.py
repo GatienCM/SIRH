@@ -21,6 +21,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
     queryset = Employee.objects.all()
     serializer_class = EmployeeSerializer
     permission_classes = [IsAuthenticated]
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsRH(), IsAdmin()]
+        return [IsAuthenticated()]
     filterset_fields = ['status', 'profession', 'date_entry']
     search_fields = ['employee_id', 'user__first_name', 'user__last_name', 'phone']
     

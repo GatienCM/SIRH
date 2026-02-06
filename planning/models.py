@@ -117,8 +117,8 @@ class Shift(models.Model):
     
     def clean(self):
         """Valider le shift"""
-        if self.end_time <= self.start_time:
-            raise ValidationError('L\'heure de fin doit être après l\'heure de début')
+        if self.end_time == self.start_time:
+            raise ValidationError('L\'heure de fin doit être différente de l\'heure de début')
     
     @property
     def duration_hours(self):
@@ -133,10 +133,15 @@ class Shift(models.Model):
     @property
     def is_past(self):
         """Vérifier si le shift est passé"""
-        shift_datetime = timezone.make_aware(
+        start = timezone.make_aware(
+            timezone.datetime.combine(self.date, self.start_time)
+        )
+        end = timezone.make_aware(
             timezone.datetime.combine(self.date, self.end_time)
         )
-        return shift_datetime < timezone.now()
+        if end <= start:
+            end += timedelta(days=1)
+        return end < timezone.now()
     
     @property
     def is_ongoing(self):
@@ -148,6 +153,8 @@ class Shift(models.Model):
         end = timezone.make_aware(
             timezone.datetime.combine(self.date, self.end_time)
         )
+        if end <= start:
+            end += timedelta(days=1)
         return start <= now <= end
 
 

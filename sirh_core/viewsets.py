@@ -132,13 +132,17 @@ class AdminDashboardViewSet(viewsets.ViewSet):
         # Statistiques employés
         total_employees = Employee.objects.count()
         active_contracts = Contract.objects.filter(
-            end_date__gte=today
+            status='active'
+        ).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=today)
+        ).filter(
+            Q(start_date__isnull=True) | Q(start_date__lte=today)
         ).count()
         
         # Statistiques véhicules
         total_vehicles = Vehicle.objects.count()
         available_vehicles = Vehicle.objects.filter(
-            status='disponible'
+            status='available'
         ).count()
         
         # Statistiques planning
@@ -280,7 +284,7 @@ class AdminDashboardViewSet(viewsets.ViewSet):
         
         # Véhicules nécessitant maintenance
         vehicles_maintenance = Vehicle.objects.filter(
-            status='en_maintenance'
+            status='maintenance'
         ).count()
         
         # Demandes de congés en attente depuis plus de 7 jours
@@ -299,10 +303,12 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             },
             'compliance': {
                 'total_active_employees': Employee.objects.filter(
-                    contract__end_date__gte=today
+                    contracts__status='active'
+                ).filter(
+                    Q(contracts__end_date__isnull=True) | Q(contracts__end_date__gte=today)
                 ).distinct().count(),
                 'employees_without_contract': Employee.objects.filter(
-                    contract__isnull=True
+                    contracts__isnull=True
                 ).count(),
                 'total_hours_month': TimeSheetEntry.objects.filter(
                     timesheet__year=current_year,

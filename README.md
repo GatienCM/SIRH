@@ -6,6 +6,22 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 
 ---
 
+## 🧾 Patch notes (06/02/2026)
+
+### ✅ Corrigé
+- **Planning** : gestion correcte des quarts de nuit (statuts passé/en cours et validation horaires).
+- **Feuilles de temps** : accès restreint par rôle, auto-remplissage sécurisé, filtres corrigés.
+- **Paie** : calcul API aligné sur les règles légales et cohérence PMSS 2026.
+- **Contrats** : validation gérée proprement (erreurs contrôlées).
+- **Portail salarié** : ajustement automatique des soldes de congés et contrôle d’accès documents/congés.
+- **API** : durcissement des permissions pour employés, contrats, véhicules, planning.
+
+### 🔧 Données & conformité
+- **PMSS 2026** mis à jour à **4 005 €** (4× = 16 020 €, 8× = 32 040 €).
+- Seed paie fiabilisé et relancé (création des cotisations manquantes).
+
+---
+
 ## 📦 Installation depuis GitHub
 
 ### Prérequis
