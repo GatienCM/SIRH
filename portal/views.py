@@ -98,6 +98,16 @@ class DashboardViewSet(viewsets.ViewSet):
             'pending_leave_requests': pending_leave_requests,
             'unread_notifications': unread_notifications,
         }
+
+        # Actions à faire
+        todo = []
+        if not current_timesheet:
+            todo.append('Créer la feuille de temps du mois en cours')
+        elif current_timesheet.status == 'draft':
+            todo.append('Soumettre la feuille de temps du mois en cours')
+        if pending_leave_requests > 0:
+            todo.append('Suivre vos demandes de congés en attente')
+        summary_data['todo'] = todo
         
         return Response(summary_data)
 

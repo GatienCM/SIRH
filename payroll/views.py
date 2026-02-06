@@ -152,19 +152,24 @@ class PayrollViewSet(viewsets.ModelViewSet):
         """Valider une fiche de paie"""
         payroll = self.get_object()
         
-        if payroll.status not in ['calculated', 'validated']:
-            return Response(
-                {'error': 'Seule une fiche calculée peut être validée'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if payroll.status == 'calculated':
+            payroll.status = 'validated'
+            payroll.validated_at = timezone.now()
+            payroll.validated_by = request.user.employee if hasattr(request.user, 'employee') else None
+            payroll.save()
+            serializer = PayrollSerializer(payroll)
+            return Response(serializer.data)
         
-        payroll.status = 'validated'
-        payroll.validated_at = timezone.now()
-        payroll.validated_by = request.user.employee if hasattr(request.user, 'employee') else None
-        payroll.save()
+        if payroll.status == 'validated' and request.user.role == 'admin':
+            payroll.status = 'processed'
+            payroll.save()
+            serializer = PayrollSerializer(payroll)
+            return Response(serializer.data)
         
-        serializer = PayrollSerializer(payroll)
-        return Response(serializer.data)
+        return Response(
+            {'error': 'Statut non valide pour cette action'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     
     @action(detail=True, methods=['post'], permission_classes=[IsRH])
     def mark_paid(self, request, pk=None):

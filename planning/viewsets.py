@@ -1,4 +1,4 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, serializers
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -109,6 +109,12 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'partial_update', 'destroy', 'confirm', 'mark_absent', 'mark_completed']:
             return [IsRH(), IsAdmin()]
         return [IsAuthenticated()]
+
+    def perform_create(self, serializer):
+        vehicle = serializer.validated_data.get('vehicle')
+        if vehicle and vehicle.status != 'available':
+            raise serializers.ValidationError({'vehicle': 'Véhicule indisponible (maintenance ou hors service).'} )
+        serializer.save()
     filterset_fields = ['shift__date', 'employee', 'status', 'vehicle']
     search_fields = ['employee__user__first_name', 'employee__user__last_name', 'notes']
     ordering_fields = ['shift__date', 'status', 'created_at']

@@ -602,10 +602,62 @@ def planning_view(request):
     return render(request, 'planning.html', context)
 
 
+def _shift_range(shift_date, start_time, end_time):
+    from datetime import datetime, timedelta
+    start_dt = datetime.combine(shift_date, start_time)
+    end_dt = datetime.combine(shift_date, end_time)
+    if end_dt <= start_dt:
+        end_dt += timedelta(days=1)
+    return start_dt, end_dt
+
+
+def _has_shift_overlap(employee_id, shift_date, start_time, end_time, exclude_shift_id=None):
+    from datetime import timedelta
+    new_start, new_end = _shift_range(shift_date, start_time, end_time)
+    assignments = Assignment.objects.select_related('shift').filter(employee_id=employee_id)
+    if exclude_shift_id:
+        assignments = assignments.exclude(shift_id=exclude_shift_id)
+    candidates = assignments.filter(shift__date__in=[shift_date, shift_date - timedelta(days=1)])
+    for assignment in candidates:
+        s_start, s_end = _shift_range(
+            assignment.shift.date,
+            assignment.shift.start_time,
+            assignment.shift.end_time
+        )
+        if new_start < s_end and new_end > s_start:
+            return True
+    return False
+
+
 @login_required(login_url='login')
 def timesheets_view(request):
     """Vue des feuilles de temps"""
     timesheets = TimeSheet.objects.select_related('employee__user').all()
+
+    # Auto-créer les feuilles de temps du mois en cours (RH/Admin/Manager)
+    if request.user.role in ['admin', 'rh', 'manager']:
+        from datetime import date as date_module
+        from portal.models import Notification
+        today = date_module.today()
+        current_year = today.year
+        current_month = today.month
+        active_employees = Employee.objects.filter(status='active')
+        for emp in active_employees:
+            timesheet, _ = TimeSheet.objects.get_or_create(
+                employee=emp,
+                year=current_year,
+                month=current_month,
+                defaults={'status': 'draft'}
+            )
+            if today.day >= 15 and timesheet.status == 'draft':
+                title = f"Feuille de temps à soumettre ({current_month:02d}/{current_year})"
+                if not Notification.objects.filter(employee=emp, title=title).exists():
+                    Notification.objects.create(
+                        employee=emp,
+                        notification_type='warning',
+                        title=title,
+                        message='Merci de soumettre votre feuille de temps du mois en cours.'
+                    )
     
     # Limiter la visibilité pour les employés
     if request.user.role == 'employee':
@@ -773,6 +825,8 @@ def payroll_create(request):
         
         if payrolls_created > 0:
             messages.success(request, f'✅ {payrolls_created} feuille(s) de paie créée(s) pour {month:02d}/{year} !')
+        if payrolls_errors:
+            messages.warning(request, '⚠️ Problèmes rencontrés : ' + ' | '.join(payrolls_errors))
         
         if payrolls_errors:
             for error in payrolls_errors:
@@ -1053,6 +1107,9 @@ def employee_create(request):
             errors.append('La profession est obligatoire')
         if not request.POST.get('employee_id', '').strip():
             errors.append('Le matricule salarié est obligatoire')
+        if request.POST.get('social_security_number'):
+            if Employee.objects.filter(social_security_number=request.POST.get('social_security_number').strip()).exists():
+                errors.append('Le numéro de sécurité sociale est déjà utilisé')
         
         # Vérifier si username existe déjà
         if username and CustomUser.objects.filter(username=username).exists():
@@ -1103,6 +1160,13 @@ def employee_create(request):
                 rib=request.POST.get('rib', '').strip(),
                 qualification=request.POST.get('qualification', '').strip(),
                 status=request.POST.get('status', 'active')
+            )
+
+            # Créer le solde de congés de l'année courante si absent
+            from portal.models import TimeOffBalance
+            TimeOffBalance.objects.get_or_create(
+                employee=employee,
+                year=timezone.now().year
             )
             
             messages.success(request, f'✅ Employé {user.get_full_name()} créé avec succès !')
@@ -1252,19 +1316,33 @@ def employee_delete(request, employee_id):
 def shift_create(request):
     if request.method == 'POST':
         try:
+            from datetime import datetime, date as date_module
+            shift_date = date_module.fromisoformat(request.POST.get('date'))
+            start_time = datetime.strptime(request.POST.get('start_time'), '%H:%M').time()
+            end_time = datetime.strptime(request.POST.get('end_time'), '%H:%M').time()
+            employee_id = request.POST.get('employee')
+            if employee_id and _has_shift_overlap(employee_id, shift_date, start_time, end_time):
+                messages.error(request, '❌ Conflit : l’employé a déjà un quart sur ce créneau.')
+                employees = Employee.objects.select_related('user', 'profession').filter(status='active')
+                shift_types = ShiftType.objects.all()
+                return render(request, 'shift_form.html', {
+                    'employees': employees,
+                    'shift_types': shift_types,
+                    'page_title': '➕ Nouveau Quart'
+                })
+
             # Créer le shift
             shift = Shift.objects.create(
                 shift_type_id=request.POST.get('shift_type'),
-                date=request.POST.get('date'),
-                start_time=request.POST.get('start_time'),
-                end_time=request.POST.get('end_time'),
+                date=shift_date,
+                start_time=start_time,
+                end_time=end_time,
                 status=request.POST.get('status', 'planned'),
                 notes=request.POST.get('notes', ''),
                 created_by=request.user
             )
             
             # Assigner l'employé au shift
-            employee_id = request.POST.get('employee')
             assignment_status = request.POST.get('assignment_status', 'assigned')
             if employee_id:
                 Assignment.objects.create(
@@ -1301,17 +1379,32 @@ def shift_edit(request, shift_id):
     assignment = shift.assignments.first()  # Récupérer la première assignation
     
     if request.method == 'POST':
+        from datetime import datetime, date as date_module
+        shift_date = date_module.fromisoformat(request.POST.get('date'))
+        start_time = datetime.strptime(request.POST.get('start_time'), '%H:%M').time()
+        end_time = datetime.strptime(request.POST.get('end_time'), '%H:%M').time()
+        employee_id = request.POST.get('employee')
+        if employee_id and _has_shift_overlap(employee_id, shift_date, start_time, end_time, exclude_shift_id=shift.id):
+            messages.error(request, '❌ Conflit : l’employé a déjà un quart sur ce créneau.')
+            employees = Employee.objects.select_related('user', 'profession').filter(status='active')
+            shift_types = ShiftType.objects.all()
+            return render(request, 'shift_form.html', {
+                'shift': shift,
+                'assignment': assignment,
+                'employees': employees,
+                'shift_types': shift_types,
+                'page_title': '✏️ Modifier Quart'
+            })
         # Mettre à jour le shift
         shift.shift_type_id = request.POST.get('shift_type')
-        shift.date = request.POST.get('date')
-        shift.start_time = request.POST.get('start_time')
-        shift.end_time = request.POST.get('end_time')
+        shift.date = shift_date
+        shift.start_time = start_time
+        shift.end_time = end_time
         shift.status = request.POST.get('status', 'planned')
         shift.notes = request.POST.get('notes', '')
         shift.save()
         
         # Mettre à jour l'assignation
-        employee_id = request.POST.get('employee')
         assignment_status = request.POST.get('assignment_status', 'assigned')
         if assignment and employee_id:
             assignment.employee_id = employee_id
@@ -1401,6 +1494,9 @@ def timesheet_create(request):
 @login_required(login_url='login')
 def timesheet_edit(request, timesheet_id):
     timesheet = get_object_or_404(TimeSheet, id=timesheet_id)
+    if timesheet.status in ['approved', 'paid']:
+        messages.error(request, '❌ Cette feuille de temps est verrouillée (approuvée/payée).')
+        return redirect('timesheets')
     if request.user.role == 'employee':
         employee = Employee.objects.filter(user=request.user).first()
         if not employee or timesheet.employee_id != employee.id:
@@ -1477,6 +1573,21 @@ def contract_create(request):
                 notes=request.POST.get('notes', ''),
                 created_by=request.user
             )
+            # Créer automatiquement une visite médicale d'embauche
+            from employees.models import MedicalVisit
+            if not MedicalVisit.objects.filter(
+                employee=contract.employee,
+                visit_type='embauche',
+                scheduled_date=contract.start_date
+            ).exists():
+                MedicalVisit.objects.create(
+                    employee=contract.employee,
+                    visit_type='embauche',
+                    scheduled_date=contract.start_date,
+                    doctor_name=contract.occupational_health_service or '',
+                    status='scheduled' if contract.start_date else 'to_schedule',
+                    notes='Créée automatiquement lors de la création du contrat'
+                )
             messages.success(request, '✅ Contrat créé avec succès !')
             return redirect('contracts')
         except ValidationError as e:
@@ -1974,6 +2085,7 @@ def employee_documents_view(request):
 def medical_visits_view(request):
     """Gestion des visites médicales"""
     from employees.models import MedicalVisit
+    from portal.models import Notification
     from datetime import date, timedelta
     
     # Filtres
@@ -2033,6 +2145,18 @@ def medical_visits_view(request):
         ).count(),
         'overdue': visits.filter(scheduled_date__lt=today, status='scheduled').count(),
     }
+
+    # Notifier les employés si visite en retard
+    overdue_visits = visits.filter(scheduled_date__lt=today, status='scheduled').select_related('employee__user')
+    for visit in overdue_visits:
+        title = f"Visite médicale en retard ({visit.scheduled_date.strftime('%d/%m/%Y')})"
+        if not Notification.objects.filter(employee=visit.employee, title=title).exists():
+            Notification.objects.create(
+                employee=visit.employee,
+                notification_type='warning',
+                title=title,
+                message='Merci de planifier votre visite médicale au plus vite.'
+            )
     
     employees = Employee.objects.filter(status='active').order_by('user__last_name')
     visit_types = MedicalVisit.VISIT_TYPE_CHOICES

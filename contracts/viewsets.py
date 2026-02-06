@@ -32,6 +32,24 @@ class ContractViewSet(viewsets.ModelViewSet):
             return Contract.objects.filter(employee=employee)
         except Employee.DoesNotExist:
             return Contract.objects.none()
+
+    def perform_create(self, serializer):
+        contract = serializer.save()
+        # Créer automatiquement une visite médicale d'embauche
+        from employees.models import MedicalVisit
+        if not MedicalVisit.objects.filter(
+            employee=contract.employee,
+            visit_type='embauche',
+            scheduled_date=contract.start_date
+        ).exists():
+            MedicalVisit.objects.create(
+                employee=contract.employee,
+                visit_type='embauche',
+                scheduled_date=contract.start_date,
+                doctor_name=contract.occupational_health_service or '',
+                status='scheduled' if contract.start_date else 'to_schedule',
+                notes='Créée automatiquement lors de la création du contrat'
+            )
     
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def my_contracts(self, request):

@@ -20,6 +20,18 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 - **Logo** : ajout d’un logo générique et dossier media créé.
 - **Paie** : bouton de création visible même lorsqu’une paie existe.
 
+### 🔄 Workflow
+- **Contrats** : création automatique d’une visite médicale d’embauche (interface + API).
+- **Planning** : blocage des assignations avec véhicule indisponible.
+- **Quarts** : détection de conflits d’horaires lors de la création/modification.
+- **Feuilles de temps** : auto‑création mensuelle pour tous les salariés + verrouillage si approuvée/payée.
+- **Paie** : validation en 2 étapes (calculé → validé → traité par admin).
+
+### 🔔 Notifications & qualité
+- **Dashboard** : ajout d’une liste d’actions à faire (todo).
+- **Visites médicales** : alertes automatiques en cas de retard.
+- **Employés** : création automatique du solde de congés annuel et contrôle d’unicité du NIR.
+
 ### 🔧 Données & conformité
 - **PMSS 2026** mis à jour à **4 005 €** (4× = 16 020 €, 8× = 32 040 €).
 - Seed paie fiabilisé et relancé (création des cotisations manquantes).
