@@ -23,7 +23,7 @@ class TimeSheetViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Les employés ne voient que leurs propres feuilles, les RH/Admins voient toutes"""
         user = self.request.user
-        queryset = TimeSheet.objects.all()
+        queryset = TimeSheet.objects.select_related('employee__user')
         
         if user.role == 'employee':
             try:
@@ -147,7 +147,7 @@ class TimeSheetEntryViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Filtrer par feuille de temps de l'utilisateur"""
         user = self.request.user
-        queryset = TimeSheetEntry.objects.all()
+        queryset = TimeSheetEntry.objects.select_related('timesheet', 'assignment', 'timesheet__employee__user')
         
         if user.role == 'employee':
             try:

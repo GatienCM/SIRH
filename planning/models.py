@@ -105,6 +105,9 @@ class Shift(models.Model):
         verbose_name = 'Shift'
         verbose_name_plural = 'Shifts'
         ordering = ['-date', '-start_time']
+        indexes = [
+            models.Index(fields=['date', 'status']),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['date', 'start_time', 'shift_type'],
@@ -212,6 +215,11 @@ class Assignment(models.Model):
         verbose_name = 'Assignment'
         verbose_name_plural = 'Assignments'
         ordering = ['-shift__date', 'employee__user__last_name']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['employee']),
+            models.Index(fields=['shift']),
+        ]
         constraints = [
             models.UniqueConstraint(
                 fields=['shift', 'employee'],

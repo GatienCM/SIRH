@@ -75,6 +75,11 @@ class TimeSheet(models.Model):
         verbose_name_plural = 'Feuilles de temps'
         ordering = ['-year', '-month', 'employee__user__last_name']
         unique_together = ['employee', 'year', 'month']
+        indexes = [
+            models.Index(fields=['year', 'month']),
+            models.Index(fields=['status']),
+            models.Index(fields=['employee']),
+        ]
     
     def __str__(self):
         return f"Feuille de temps {self.employee} - {self.month}/{self.year}"

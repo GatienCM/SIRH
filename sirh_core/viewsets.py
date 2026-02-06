@@ -2,6 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from django.core.cache import cache
 from django.utils import timezone
 from django.db.models import Count, Sum, Avg, Q
 from datetime import datetime, date, timedelta
@@ -128,6 +129,11 @@ class AdminDashboardViewSet(viewsets.ViewSet):
         today = date.today()
         current_month = today.month
         current_year = today.year
+
+        cache_key = f"admin_summary:{current_year}-{current_month}"
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached)
         
         # Statistiques employés
         total_employees = Employee.objects.count()
@@ -259,7 +265,8 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             'leave_requests': list(leave_requests_by_type),
             'payrolls': list(payrolls_by_month),
         }
-        
+
+        cache.set(cache_key, statistics_data, timeout=60)
         return Response(statistics_data)
     
     @action(detail=False, methods=['get'])
@@ -268,6 +275,11 @@ class AdminDashboardViewSet(viewsets.ViewSet):
         today = date.today()
         current_month = today.month
         current_year = today.year
+
+        cache_key = f"admin_reports:{current_year}-{current_month}"
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached)
         
         # Contrats expirant bientôt (30 jours)
         contracts_expiring = Contract.objects.filter(
@@ -319,6 +331,7 @@ class AdminDashboardViewSet(viewsets.ViewSet):
             }
         }
         
+        cache.set(cache_key, reports_data, timeout=60)
         return Response(reports_data)
 
 

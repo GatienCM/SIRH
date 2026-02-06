@@ -267,6 +267,11 @@ class Payroll(models.Model):
         verbose_name_plural = 'Fiches de paie'
         ordering = ['-period', 'employee']
         unique_together = [['employee', 'period']]
+        indexes = [
+            models.Index(fields=['year', 'month']),
+            models.Index(fields=['status']),
+            models.Index(fields=['employee']),
+        ]
     
     def __str__(self):
         return f'{self.employee.user.first_name} {self.employee.user.last_name} - {self.period}'

@@ -1,5 +1,6 @@
 
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from sirh_core.decorators import admin_required, employee_required
 from django.test import RequestFactory
 
@@ -213,26 +214,30 @@ def dashboard(request):
     # Récupérer les statistiques (pour admins/managers)
     upcoming_30_days = today + timedelta(days=30)
     
-    stats = {
-        'employees': Employee.objects.count(),
-        'shifts_today': Shift.objects.filter(date=today).count(),
-        'assignments_today': Assignment.objects.filter(
-            shift__date=today
-        ).count(),
-        'timesheets_pending': TimeSheet.objects.filter(
-            status='submitted',
-            year=current_year,
-            month=current_month
-        ).count(),
-        'payrolls_pending': Payroll.objects.filter(
-            status='calculated'
-        ).count(),
-        'total_salaries': round(float(Payroll.objects.filter(
-            year=current_year,
-            month=current_month,
-            status__in=['calculated', 'validated', 'paid']
-        ).aggregate(total=Sum('net_salary'))['total'] or 0), 2),
-    }
+    cache_key = f"dashboard_stats:{current_year}-{current_month}"
+    stats = cache.get(cache_key)
+    if not stats:
+        stats = {
+            'employees': Employee.objects.count(),
+            'shifts_today': Shift.objects.filter(date=today).count(),
+            'assignments_today': Assignment.objects.filter(
+                shift__date=today
+            ).count(),
+            'timesheets_pending': TimeSheet.objects.filter(
+                status='submitted',
+                year=current_year,
+                month=current_month
+            ).count(),
+            'payrolls_pending': Payroll.objects.filter(
+                status='calculated'
+            ).count(),
+            'total_salaries': round(float(Payroll.objects.filter(
+                year=current_year,
+                month=current_month,
+                status__in=['calculated', 'validated', 'paid']
+            ).aggregate(total=Sum('net_salary'))['total'] or 0), 2),
+        }
+        cache.set(cache_key, stats, timeout=60)
     
     # Visites médicales urgentes (à faire dans les 30 prochains jours)
     urgent_medical_visits = MedicalVisit.objects.filter(
@@ -555,7 +560,10 @@ def planning_view(request):
     """Vue du planning"""
     from django.utils import timezone
     
-    shifts = Shift.objects.select_related('shift_type').prefetch_related('assignments').all()
+    shifts = Shift.objects.select_related('shift_type').prefetch_related(
+        'assignments__employee__user',
+        'assignments__vehicle'
+    ).all()
     
     # Filtrer par date
     date_filter = request.GET.get('date', '')

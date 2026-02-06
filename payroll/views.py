@@ -41,8 +41,8 @@ class PayrollViewSet(viewsets.ModelViewSet):
         """Filtrer les fiches de paie selon l'utilisateur"""
         user = self.request.user
         if hasattr(user, 'employee') and user.role == 'employee':
-            return Payroll.objects.filter(employee=user.employee)
-        return Payroll.objects.all()
+            return Payroll.objects.select_related('employee__user').filter(employee=user.employee)
+        return Payroll.objects.select_related('employee__user')
     
     @action(detail=False, methods=['post'], permission_classes=[IsRH])
     def create_payroll(self, request):

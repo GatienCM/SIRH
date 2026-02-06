@@ -32,10 +32,10 @@ class EmployeeViewSet(viewsets.ModelViewSet):
         """Les salariés ne voient que leur profil, les RH voient tous"""
         user = self.request.user
         if user.role in ['rh', 'admin']:
-            return Employee.objects.all()
+            return Employee.objects.select_related('user', 'profession')
         # Les salariés ne peuvent voir que leur propre profil
         try:
-            return Employee.objects.filter(user=user)
+            return Employee.objects.select_related('user', 'profession').filter(user=user)
         except Employee.DoesNotExist:
             return Employee.objects.none()
     

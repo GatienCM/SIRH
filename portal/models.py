@@ -88,6 +88,11 @@ class LeaveRequest(models.Model):
         verbose_name = 'Demande de congé'
         verbose_name_plural = 'Demandes de congés'
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status']),
+            models.Index(fields=['employee']),
+            models.Index(fields=['start_date']),
+        ]
     
     def __str__(self):
         return f"{self.employee} - {self.get_leave_type_display()} ({self.start_date} - {self.end_date})"

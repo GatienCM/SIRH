@@ -41,7 +41,7 @@ class ShiftViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Les RH/Admins voient tous les shifts, les autres ne voient que les shifts futurs"""
         user = self.request.user
-        queryset = Shift.objects.all()
+        queryset = Shift.objects.select_related('shift_type').prefetch_related('assignments')
         
         if user.role not in ['admin', 'rh']:
             # Les employés ne voient que les shifts futurs
@@ -117,7 +117,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         """Les employés ne voient que leurs assignments, les RH/Admins voient tous"""
         user = self.request.user
-        queryset = Assignment.objects.all()
+        queryset = Assignment.objects.select_related('shift', 'employee__user', 'vehicle')
         
         if user.role == 'employee':
             # Afficher seulement les assignments de l'employé

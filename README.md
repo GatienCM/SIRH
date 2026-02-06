@@ -20,6 +20,11 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 - **PMSS 2026** mis à jour à **4 005 €** (4× = 16 020 €, 8× = 32 040 €).
 - Seed paie fiabilisé et relancé (création des cotisations manquantes).
 
+### ⚡ Optimisations
+- **Requêtes DB** : réduction des N+1 via `select_related` / `prefetch_related`.
+- **Index DB** : ajout d’index sur les champs filtrés (dates, statuts, employés).
+- **Cache** : mise en cache des statistiques dashboard/admin (60s).
+
 ---
 
 ## 📦 Installation depuis GitHub
