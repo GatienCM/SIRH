@@ -16,6 +16,10 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 - **Portail salarié** : ajustement automatique des soldes de congés et contrôle d’accès documents/congés.
 - **API** : durcissement des permissions pour employés, contrats, véhicules, planning.
 
+### 🎨 Interface
+- **Logo** : ajout d’un logo générique et dossier media créé.
+- **Paie** : bouton de création visible même lorsqu’une paie existe.
+
 ### 🔧 Données & conformité
 - **PMSS 2026** mis à jour à **4 005 €** (4× = 16 020 €, 8× = 32 040 €).
 - Seed paie fiabilisé et relancé (création des cotisations manquantes).
