@@ -881,12 +881,16 @@ def payroll_detail(request, payroll_id):
         })
     
     total_contributions = sum(Decimal(str(c['amount'])) for c in contribution_details)
+
+    contribution_names = list(active_contributions.values_list('name', flat=True))
+    payroll_items = payroll.items.exclude(description__in=contribution_names).order_by('item_type', 'created_at')
     
     context = {
         'payroll': payroll,
         'page_title': f'📋 Fiche de Paie - {payroll.employee.user.get_full_name()}',
         'contribution_details': contribution_details,
         'total_contributions': total_contributions,
+        'payroll_items': payroll_items,
     }
     
     return render(request, 'payroll_detail.html', context)
@@ -1825,6 +1829,7 @@ def absences_view(request):
             cancelled_count = 0
             deduction_total = Decimal('0.00')
             maintained_total = Decimal('0.00')
+            payrolls_to_recalc = set()
             
             # Règles de rémunération selon le type d'absence (référence droit du travail)
             pay_blocked = absence_type in ['sick', 'unpaid', 'maternal', 'paternal', 'personal']
@@ -1881,6 +1886,7 @@ def absences_view(request):
                             description=f"Absence {absence.get_absence_type_display()} le {assign.shift.date}",
                             amount=amount
                         )
+                        payrolls_to_recalc.add(payroll.id)
                     elif pay_maintained:
                         maintained_total += amount
                         payroll.gross_salary += amount
@@ -1892,6 +1898,13 @@ def absences_view(request):
                             description=f"Maintien salaire congé payé le {assign.shift.date}",
                             amount=amount
                         )
+                        payrolls_to_recalc.add(payroll.id)
+
+            # Recalculer les cotisations si le brut ou les déductions ont changé
+            for payroll_id in payrolls_to_recalc:
+                payroll_to_update = Payroll.objects.get(id=payroll_id)
+                payroll_to_update.calculate_with_payroll_rules()
+                payroll_to_update.save()
             
             # Messages utilisateur
             if cancelled_count:

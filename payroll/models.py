@@ -390,7 +390,7 @@ class Payroll(models.Model):
             self.social_security += amount
             
             # 5️⃣ CRÉER LIGNE DÉTAILLÉE (pour traçabilité)
-            PayrollItem.objects.get_or_create(
+            PayrollItem.objects.update_or_create(
                 payroll=self,
                 item_type='deduction',
                 description=contribution.name,
