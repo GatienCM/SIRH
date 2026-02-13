@@ -1555,47 +1555,195 @@ def timesheet_auto_fill(request, timesheet_id):
 
 # CRUD Contracts
 @login_required(login_url='login')
-def contract_create(request):
+def contract_preview_download(request):
+    """
+    Télécharge le document Word de prévisualisation
+    """
+    from django.http import HttpResponse
+    import base64
+    
+    if 'contract_preview_file' not in request.session:
+        messages.error(request, '❌ Aucun document de prévisualisation disponible.')
+        return redirect('contract_create')
+    
+    file_data = request.session['contract_preview_file']
+    filename = file_data['filename']
+    file_content = base64.b64decode(file_data['content'])
+    
+    response = HttpResponse(file_content, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    return response
+
+
+@login_required(login_url='login')
+def contract_preview(request):
+    """
+    Prévisualise le contrat avant de le créer définitivement
+    """
     if request.method == 'POST':
-        from django.core.exceptions import ValidationError
+        from datetime import datetime
+        from contracts.utils import generate_contract_document
+        from contracts.models import Contract
+        
+        # Fonction helper pour convertir les strings de date en objets date
+        def parse_date(date_str):
+            if not date_str:
+                return None
+            try:
+                return datetime.strptime(date_str, '%Y-%m-%d').date()
+            except (ValueError, TypeError):
+                return None
+        
+        # Stocker les données du formulaire en session
+        request.session['contract_preview_data'] = {
+            'employee': request.POST.get('employee'),
+            'contract_number': request.POST.get('contract_number'),
+            'contract_type': request.POST.get('contract_type'),
+            'status': request.POST.get('status', 'active'),
+            'contract_status': request.POST.get('contract_status', 'trial'),
+            'entity_template': request.POST.get('entity_template') or None,
+            'start_date': request.POST.get('start_date'),
+            'end_date': request.POST.get('end_date') or None,
+            'trial_end_date': request.POST.get('trial_end_date') or None,
+            'working_hours_per_week': request.POST.get('working_hours_per_week', '35'),
+            'hourly_rate': request.POST.get('hourly_rate') or None,
+            'monthly_salary': request.POST.get('monthly_salary') or None,
+            'occupational_health_service': request.POST.get('occupational_health_service', ''),
+            'collective_agreement': request.POST.get('collective_agreement', 'Convention collective du transport sanitaire'),
+            'collective_agreement_date': request.POST.get('collective_agreement_date') or None,
+            'notes': request.POST.get('notes', ''),
+        }
+        
         try:
-            contract = Contract.objects.create(
-                employee_id=request.POST.get('employee'),
+            # Créer un objet Contract temporaire (sans le sauvegarder)
+            employee = Employee.objects.get(id=request.POST.get('employee'))
+            contract = Contract(
+                employee=employee,
                 contract_number=request.POST.get('contract_number'),
                 contract_type=request.POST.get('contract_type'),
                 status=request.POST.get('status', 'active'),
                 contract_status=request.POST.get('contract_status', 'trial'),
-                start_date=request.POST.get('start_date'),
-                end_date=request.POST.get('end_date') or None,
-                trial_end_date=request.POST.get('trial_end_date') or None,
+                entity_template=request.POST.get('entity_template') or None,
+                start_date=parse_date(request.POST.get('start_date')),
+                end_date=parse_date(request.POST.get('end_date')),
+                trial_end_date=parse_date(request.POST.get('trial_end_date')),
                 working_hours_per_week=request.POST.get('working_hours_per_week', 35),
                 hourly_rate=request.POST.get('hourly_rate') or None,
                 monthly_salary=request.POST.get('monthly_salary') or None,
                 occupational_health_service=request.POST.get('occupational_health_service', ''),
                 collective_agreement=request.POST.get('collective_agreement', 'Convention collective du transport sanitaire'),
-                collective_agreement_date=request.POST.get('collective_agreement_date') or None,
+                collective_agreement_date=parse_date(request.POST.get('collective_agreement_date')),
                 notes=request.POST.get('notes', ''),
-                created_by=request.user
             )
-            # Créer automatiquement une visite médicale d'embauche
-            from employees.models import MedicalVisit
-            if not MedicalVisit.objects.filter(
-                employee=contract.employee,
-                visit_type='embauche',
-                scheduled_date=contract.start_date
-            ).exists():
-                MedicalVisit.objects.create(
+            
+            # Générer le document pour prévisualisation
+            filename, file_content = generate_contract_document(contract)
+            
+            # Stocker le fichier en session (encodé en base64 pour la session)
+            import base64
+            request.session['contract_preview_file'] = {
+                'filename': filename,
+                'content': base64.b64encode(file_content).decode('utf-8')
+            }
+            
+            # Préparer le contexte pour l'affichage
+            context = {
+                'contract': contract,
+                'employee': employee,
+                'filename': filename,
+                'page_title': '👁️ Prévisualisation du Contrat'
+            }
+            
+            return render(request, 'contract_preview.html', context)
+            
+        except Exception as e:
+            messages.error(request, f'❌ Erreur lors de la prévisualisation : {str(e)}')
+            employees = Employee.objects.all()
+            return render(request, 'contract_form.html', {'employees': employees, 'page_title': '➕ Nouveau Contrat'})
+    
+    return redirect('contract_create')
+
+
+@login_required(login_url='login')
+def contract_create(request):
+    if request.method == 'POST':
+        from django.core.exceptions import ValidationError
+        from django.core.files.base import ContentFile
+        from contracts.utils import generate_contract_document
+        
+        # Vérifier si c'est une confirmation depuis la prévisualisation
+        if request.POST.get('confirmed') == 'true':
+            # Récupérer les données de la session
+            if 'contract_preview_data' not in request.session:
+                messages.error(request, '❌ Données de prévisualisation expirées. Veuillez recommencer.')
+                return redirect('contract_create')
+            
+            data = request.session['contract_preview_data']
+            
+            try:
+                contract = Contract.objects.create(
+                    employee_id=data.get('employee'),
+                    contract_number=data.get('contract_number'),
+                    contract_type=data.get('contract_type'),
+                    status=data.get('status', 'active'),
+                    contract_status=data.get('contract_status', 'trial'),
+                    entity_template=data.get('entity_template') or None,
+                    start_date=data.get('start_date'),
+                    end_date=data.get('end_date') or None,
+                    trial_end_date=data.get('trial_end_date') or None,
+                    working_hours_per_week=data.get('working_hours_per_week', 35),
+                    hourly_rate=data.get('hourly_rate') or None,
+                    monthly_salary=data.get('monthly_salary') or None,
+                    occupational_health_service=data.get('occupational_health_service', ''),
+                    collective_agreement=data.get('collective_agreement', 'Convention collective du transport sanitaire'),
+                    collective_agreement_date=data.get('collective_agreement_date') or None,
+                    notes=data.get('notes', ''),
+                    created_by=request.user
+                )
+                
+                # Utiliser le fichier de prévisualisation s'il existe
+                if 'contract_preview_file' in request.session:
+                    import base64
+                    file_data = request.session['contract_preview_file']
+                    file_content = base64.b64decode(file_data['content'])
+                    contract.contract_file.save(file_data['filename'], ContentFile(file_content), save=True)
+                else:
+                    # Générer le document si pas de prévisualisation
+                    filename, file_content = generate_contract_document(contract)
+                    contract.contract_file.save(filename, ContentFile(file_content), save=True)
+                
+                messages.success(request, '✅ Contrat créé avec succès ! Le document Word a été généré automatiquement.')
+                
+                # Créer automatiquement une visite médicale d'embauche
+                from employees.models import MedicalVisit
+                if not MedicalVisit.objects.filter(
                     employee=contract.employee,
                     visit_type='embauche',
-                    scheduled_date=contract.start_date,
-                    doctor_name=contract.occupational_health_service or '',
-                    status='scheduled' if contract.start_date else 'to_schedule',
-                    notes='Créée automatiquement lors de la création du contrat'
-                )
-            messages.success(request, '✅ Contrat créé avec succès !')
-            return redirect('contracts')
-        except ValidationError as e:
-            messages.error(request, f"❌ Erreur : {', '.join(e.messages)}")
+                    scheduled_date=contract.start_date
+                ).exists():
+                    MedicalVisit.objects.create(
+                        employee=contract.employee,
+                        visit_type='embauche',
+                        scheduled_date=contract.start_date,
+                        doctor_name=contract.occupational_health_service or '',
+                        status='scheduled' if contract.start_date else 'to_schedule',
+                        notes='Créée automatiquement lors de la création du contrat'
+                    )
+                
+                # Nettoyer la session
+                if 'contract_preview_data' in request.session:
+                    del request.session['contract_preview_data']
+                if 'contract_preview_file' in request.session:
+                    del request.session['contract_preview_file']
+                
+                return redirect('contracts')
+            except ValidationError as e:
+                messages.error(request, f"❌ Erreur : {', '.join(e.messages)}")
+        else:
+            # POST direct sans prévisualisation (ne devrait pas arriver normalement)
+            messages.warning(request, '⚠️ Veuillez utiliser la prévisualisation avant de créer le contrat.')
+            return redirect('contract_create')
     
     employees = Employee.objects.all()
     return render(request, 'contract_form.html', {'employees': employees, 'page_title': '➕ Nouveau Contrat'})
@@ -1648,6 +1796,40 @@ def contract_delete(request, contract_id):
     contract.delete()
     messages.success(request, '✅ Contrat supprimé avec succès !')
     return redirect('contracts')
+
+
+@login_required(login_url='login')
+def contract_download(request, contract_id):
+    """
+    Télécharge ou régénère le document Word du contrat
+    """
+    from django.http import HttpResponse
+    from django.core.files.base import ContentFile
+    from contracts.utils import generate_contract_document
+    
+    contract = get_object_or_404(Contract, id=contract_id)
+    
+    # Vérifier si le fichier existe déjà
+    if contract.contract_file and request.GET.get('regenerate') != '1':
+        # Télécharger le fichier existant
+        response = HttpResponse(contract.contract_file.read(), content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+        response['Content-Disposition'] = f'attachment; filename="{contract.contract_file.name.split("/")[-1]}"'
+        return response
+    else:
+        # Régénérer le document
+        try:
+            filename, file_content = generate_contract_document(contract)
+            contract.contract_file.save(filename, ContentFile(file_content), save=True)
+            
+            # Télécharger le nouveau fichier
+            response = HttpResponse(file_content, content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            
+            messages.success(request, '✅ Document de contrat régénéré avec succès !')
+            return response
+        except Exception as e:
+            messages.error(request, f'❌ Erreur lors de la génération du document : {str(e)}')
+            return redirect('contracts')
 
 
 # CRUD Vehicles

@@ -222,7 +222,13 @@ class AdminDashboardViewSet(viewsets.ViewSet):
         except ValueError:
             days = 30
         
-        start_date = date.today() - timedelta(days=days)
+        today = date.today()
+        cache_key = f"admin_statistics:{today.year}-{today.month}-{period}"
+        cached = cache.get(cache_key)
+        if cached:
+            return Response(cached)
+        
+        start_date = today - timedelta(days=days)
         
         # Évolution des employés
         employees_evolution = Employee.objects.filter(
@@ -235,8 +241,8 @@ class AdminDashboardViewSet(viewsets.ViewSet):
         
         # Heures travaillées
         hours_worked = TimeSheetEntry.objects.filter(
-            timesheet__year=date.today().year,
-            timesheet__month=date.today().month
+            timesheet__year=today.year,
+            timesheet__month=today.month
         ).aggregate(
             total_hours=Sum('hours_worked'),
             total_normal=Sum('hours_worked', filter=Q(entry_type='normal')),

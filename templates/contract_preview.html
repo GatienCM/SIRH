@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% load l10n %}
+
+{% block content %}
+<div class="table-container">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; margin-bottom: 30px;">
+        <h2 style="margin: 0; color: white;">👁️ Prévisualisation du Contrat</h2>
+        <p style="margin: 10px 0 0 0; opacity: 0.9;">Vérifiez les informations ci-dessous et téléchargez le document Word pour validation</p>
+    </div>
+    
+    <!-- Informations sur l'employé -->
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #667eea;">
+        <h3 style="margin-top: 0; color: #667eea;">👤 Informations Employé</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+            <div>
+                <p style="margin: 5px 0;"><strong>Nom complet :</strong> {{ employee.user.get_full_name }}</p>
+                <p style="margin: 5px 0;"><strong>Profession :</strong> {{ employee.profession.name }}</p>
+                {% if employee.birth_date %}
+                <p style="margin: 5px 0;"><strong>Date de naissance :</strong> {{ employee.birth_date|date:"d/m/Y" }}</p>
+                {% endif %}
+            </div>
+            <div>
+                {% if employee.social_security_number %}
+                <p style="margin: 5px 0;"><strong>N° Sécurité sociale :</strong> {{ employee.social_security_number }}</p>
+                {% endif %}
+                {% if employee.address %}
+                <p style="margin: 5px 0;"><strong>Adresse :</strong> {{ employee.address }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informations sur le contrat -->
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #764ba2;">
+        <h3 style="margin-top: 0; color: #764ba2;">📋 Détails du Contrat</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div>
+                <p style="margin: 5px 0;"><strong>Numéro :</strong> {{ contract.contract_number }}</p>
+                <p style="margin: 5px 0;"><strong>Type :</strong> {{ contract.get_contract_type_display }}</p>
+                <p style="margin: 5px 0;"><strong>Statut :</strong> {{ contract.get_status_display }}</p>
+            </div>
+            <div>
+                <p style="margin: 5px 0;"><strong>Phase :</strong> {{ contract.get_contract_status_display }}</p>
+                {% if contract.entity_template %}
+                <p style="margin: 5px 0;"><strong>Entité :</strong> {{ contract.get_entity_template_display }}</p>
+                {% endif %}
+            </div>
+            <div>
+                <p style="margin: 5px 0;"><strong>Date début :</strong> {{ contract.start_date|date:"d/m/Y" }}</p>
+                {% if contract.end_date %}
+                <p style="margin: 5px 0;"><strong>Date fin :</strong> {{ contract.end_date|date:"d/m/Y" }}</p>
+                {% endif %}
+                {% if contract.trial_end_date %}
+                <p style="margin: 5px 0;"><strong>Fin période d'essai :</strong> {{ contract.trial_end_date|date:"d/m/Y" }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Conditions de travail -->
+    <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 20px; border-left: 5px solid #10b981;">
+        <h3 style="margin-top: 0; color: #10b981;">💼 Conditions de Travail</h3>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+            <div>
+                <p style="margin: 5px 0;"><strong>Heures/semaine :</strong> {{ contract.working_hours_per_week|unlocalize }}h</p>
+            </div>
+            <div>
+                {% if contract.hourly_rate %}
+                <p style="margin: 5px 0;"><strong>Taux horaire :</strong> {{ contract.hourly_rate|unlocalize }} €</p>
+                {% endif %}
+            </div>
+            <div>
+                {% if contract.monthly_salary %}
+                <p style="margin: 5px 0;"><strong>Salaire mensuel :</strong> {{ contract.monthly_salary|unlocalize }} €</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if contract.collective_agreement %}
+        <p style="margin: 15px 0 5px 0;"><strong>Convention collective :</strong> {{ contract.collective_agreement }}</p>
+        {% endif %}
+        
+        {% if contract.occupational_health_service %}
+        <p style="margin: 5px 0;"><strong>Médecine du travail :</strong> {{ contract.occupational_health_service }}</p>
+        {% endif %}
+        
+        {% if contract.notes %}
+        <p style="margin: 15px 0 5px 0;"><strong>Notes :</strong></p>
+        <div style="background: white; padding: 10px; border-radius: 5px; white-space: pre-wrap;">{{ contract.notes }}</div>
+        {% endif %}
+    </div>
+    
+    <!-- Document Word -->
+    <div style="background: #fffbeb; padding: 20px; border-radius: 10px; margin-bottom: 30px; border: 2px solid #f59e0b;">
+        <h3 style="margin-top: 0; color: #f59e0b;">📄 Document Word Généré</h3>
+        <p style="margin-bottom: 15px;">Le document <strong>{{ filename }}</strong> a été généré avec succès.</p>
+        
+        <a href="{% url 'contract_preview_download' %}" class="btn" style="background: #f59e0b; display: inline-flex; align-items: center; gap: 10px;">
+            <span style="font-size: 20px;">📥</span>
+            <span>Télécharger le document pour vérification</span>
+        </a>
+        
+        <p style="margin-top: 15px; color: #92400e; font-size: 14px;">
+            ⚠️ <strong>Important :</strong> Téléchargez et vérifiez le document Word avant de confirmer la création du contrat.
+        </p>
+    </div>
+    
+    <!-- Actions -->
+    <div style="background: #f0f9ff; padding: 20px; border-radius: 10px; border: 2px solid #3b82f6;">
+        <h3 style="margin-top: 0; color: #1e40af;">✅ Validation</h3>
+        <p style="margin-bottom: 20px;">Si les informations sont correctes et que le document vous convient, confirmez la création du contrat :</p>
+        
+        <form method="POST" action="{% url 'contract_create' %}" style="display: inline;">
+            {% csrf_token %}
+            <input type="hidden" name="confirmed" value="true">
+            
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <button type="submit" class="btn" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); font-size: 16px;">
+                    ✅ Confirmer et Créer le Contrat
+                </button>
+                
+                <a href="{% url 'contracts' %}" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">
+                    ❌ Annuler
+                </a>
+                
+                <a href="{% url 'contract_create' %}" class="btn" style="background: #f59e0b;">
+                    ✏️ Modifier
+                </a>
+            </div>
+        </form>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <p style="margin: 0; color: #92400e;">
+            <strong>💡 Astuce :</strong> Une fois le contrat confirmé, une visite médicale d'embauche sera automatiquement créée 
+            et le document Word sera attaché au contrat dans votre système.
+        </p>
+    </div>
+</div>
+{% endblock %}

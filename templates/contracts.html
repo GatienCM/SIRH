@@ -28,6 +28,7 @@
                 <th>📅 Date Fin</th>
                 <th>💼 Professionnel</th>
                 <th>📊 Statut</th>
+                <th>📄 Document</th>
                 <th>⚙️ Actions</th>
             </tr>
         </thead>
@@ -46,6 +47,20 @@
                         <span class="badge badge-danger">✗ Expiré</span>
                     {% else %}
                         <span class="badge badge-warning">⏳ À venir</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if contract.contract_file %}
+                        <a href="{% url 'contract_download' contract.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em; background: #28a745; color: white;" title="Télécharger le contrat">
+                            📥 Word
+                        </a>
+                        <a href="{% url 'contract_download' contract.id %}?regenerate=1" class="btn" style="padding: 5px 10px; font-size: 0.85em; background: #17a2b8; color: white;" title="Régénérer le contrat">
+                            🔄
+                        </a>
+                    {% else %}
+                        <a href="{% url 'contract_download' contract.id %}" class="btn" style="padding: 5px 10px; font-size: 0.85em; background: #ffc107; color: #333;" title="Générer le contrat">
+                            📝 Générer
+                        </a>
                     {% endif %}
                 </td>
                 <td>

@@ -15,7 +15,7 @@ from .views_app import (
     shift_create, shift_edit, shift_delete,
     timesheet_create, timesheet_edit, timesheet_delete, timesheet_auto_fill,
     timesheet_adjustment_add, timesheet_adjustment_approve, timesheet_adjustment_delete,
-    contract_create, contract_edit, contract_delete,
+    contract_create, contract_edit, contract_delete, contract_download, contract_preview, contract_preview_download,
     payroll_settings_view, payroll_calculation_api, financial_report,
     vehicle_create, vehicle_edit, vehicle_delete,
     settings_professions, profession_create, profession_edit, profession_delete,
@@ -85,8 +85,11 @@ urlpatterns = [
     
     path('contracts/', contracts_view, name='contracts'),
     path('contracts/create/', contract_create, name='contract_create'),
+    path('contracts/preview/', contract_preview, name='contract_preview'),
+    path('contracts/preview/download/', contract_preview_download, name='contract_preview_download'),
     path('contracts/<int:contract_id>/edit/', contract_edit, name='contract_edit'),
     path('contracts/<int:contract_id>/delete/', contract_delete, name='contract_delete'),
+    path('contracts/<int:contract_id>/download/', contract_download, name='contract_download'),
     
     path('vehicles/', vehicles_view, name='vehicles'),
     path('vehicles/create/', vehicle_create, name='vehicle_create'),

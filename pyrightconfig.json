@@ -1,0 +1,11 @@
+{
+    "venv": "venv",
+    "venvPath": ".",
+    "pythonVersion": "3.14",
+    "pythonPlatform": "Windows",
+    "typeCheckingMode": "basic",
+    "include": ["sirh_project"],
+    "exclude": ["**/node_modules", "**/__pycache__", "venv", ".venv"],
+    "reportMissingImports": false,
+    "reportMissingTypeStubs": false
+}

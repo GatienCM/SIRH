@@ -5,7 +5,7 @@
 <div class="table-container">
     <h2 style="margin-bottom: 20px;">{% if contract %}✏️ Modifier le Contrat{% else %}➕ Nouveau Contrat{% endif %}</h2>
     
-    <form method="POST">
+    <form method="POST" {% if not contract %}action="{% url 'contract_preview' %}"{% endif %}>
         {% csrf_token %}
         
         <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">👤 Employé et Identification</h3>
@@ -64,6 +64,22 @@
                 <option value="confirmed" {% if contract.contract_status == 'confirmed' %}selected{% endif %}>Confirmé</option>
             </select>
         </div>
+        
+        {% if not contract %}
+        <div style="margin-bottom: 20px; padding: 15px; background: #f0f9ff; border: 2px solid #3b82f6; border-radius: 6px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 600; color: #1e40af;">🏢 Entité (Template de Contrat) *</label>
+            <select name="entity_template" required style="width: 100%; padding: 10px; border: 1px solid #3b82f6; border-radius: 6px; font-weight: 600;">
+                <option value="">-- Sélectionner l'entité --</option>
+                <option value="nantes_urgences">Nantes Urgences Sansoucy</option>
+                <option value="ambulances_sansoucy">Ambulances Sansoucy</option>
+            </select>
+            <small style="color: #1e40af; margin-top: 5px; display: block;">⚠️ Le document Word sera généré avec les informations de l'entité sélectionnée</small>
+        </div>
+        {% else %}
+        <div style="padding: 15px; background: #f0f0f0; border-radius: 6px; margin-bottom: 20px;">
+            <p><strong>Entité :</strong> {{ contract.get_entity_template_display|default:"Non défini" }}</p>
+        </div>
+        {% endif %}
         
         <h3 style="margin-top: 30px; margin-bottom: 15px; color: #667eea;">📅 Dates</h3>
         
@@ -125,7 +141,11 @@
         </div>
         
         <div style="display: flex; gap: 15px; margin-top: 30px;">
-            <button type="submit" class="btn">💾 Enregistrer</button>
+            {% if contract %}
+                <button type="submit" class="btn">💾 Enregistrer</button>
+            {% else %}
+                <button type="submit" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">👁️ Prévisualiser le Contrat</button>
+            {% endif %}
             <a href="/contracts/" class="btn btn-secondary" style="display: inline-block; line-height: 1.5;">❌ Annuler</a>
         </div>
     </form>

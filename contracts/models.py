@@ -28,6 +28,11 @@ class Contract(models.Model):
         ('confirmed', 'Confirmé'),
     ]
     
+    ENTITY_TEMPLATE_CHOICES = [
+        ('nantes_urgences', 'Nantes Urgences Sansoucy'),
+        ('ambulances_sansoucy', 'Ambulances Sansoucy'),
+    ]
+    
     # Identification
     employee = models.ForeignKey(
         Employee,
@@ -61,6 +66,14 @@ class Contract(models.Model):
         choices=CONTRACT_STATUS_CHOICES,
         default='trial',
         help_text='Phase du contrat (essai ou confirmé)'
+    )
+    
+    entity_template = models.CharField(
+        max_length=30,
+        choices=ENTITY_TEMPLATE_CHOICES,
+        blank=True,
+        null=True,
+        help_text='Entité pour laquelle générer le contrat'
     )
     
     # Dates
