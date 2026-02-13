@@ -6,6 +6,58 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 
 ---
 
+## 🧾 Patch notes (13/02/2026)
+
+### ✨ Nouvelles Fonctionnalités
+- **Contrats - Génération Word** : Automatisation complète de la création de contrats Word à partir des données du système
+- **Prévisualisation de Contrat** : Vérification visuelle avant la création définitive du contrat en base de données
+- **Templates Multilingues** : 2 templates Word personnalisés par entité (Nantes Urgences Sansoucy / Ambulances Sansoucy)
+- **Sélection d'Entité** : Choix de l'entité lors de la création du contrat pour adapter le template générateur
+
+### 🛠️ Architecture
+- **contracts/utils.py** (NEW) : Utilitaires de génération Word avec Jinja2 templating
+  * `create_contract_template()` : Générage un template générique HTML avec docx
+  * `create_entity_template()` : Crée des templates personnalisés pour chaque entité (SIRET, adresse, représentant)
+  * `generate_contract_document()` : Remplissage dynamique du template avec les données du contrat
+- **Système de Publipostage** : Jinja2 pour l'interpolation dynamique dans les documents Word (variables `{{ }}` et conditions `{% %}`"
+
+### 💾 Modèles
+- **Contract** : Ajout du champ `entity_template` (choix: 'nantes_urgences' ou 'ambulances_sansoucy')
+- **Migration** : 0003_contract_entity_template.py pour créer le champ en base de données
+
+### 🎨 Interface Utilisateur
+- **Formulaire de Contrat Amélioré** : Ajout d'une sélection visuelle d'entité (cadre bleu, emoji 🏢)
+- **Nouveau Bouton** : "👁️ Prévisualiser le Contrat" au lieu de "Enregistrer" directement
+- **Page de Prévisualisation** (NEW) : contract_preview.html avec:
+  * Récapitulatif complet du contrat
+  * Affichage du document Word généré
+  * Téléchargement pour vérification manuelle
+  * 3 actions : Confirmer, Modifier, Annuler
+
+### 📄 Génération & Stockage
+- **Workflow 2-étapes** : Prévisualisation → Validation → Création (évite les contrats mal remplis)
+- **Stockage en Session** : Les données et le fichier Word sont temporaires pendant la prévisualisation (encodage base64)
+- **Fichier Attaché** : Une fois confirmé, le contrat Word est sauvegardé dans le champ `contract_file`
+
+### 🔧 Techniques
+- **python-docx** : Création/manipulation de documents Word
+- **docxtpl** : Templating Jinja2 pour Word (publipostage)
+- **Formatage Français** : Dates en DD/MM/YYYY, montants avec virgules et espaces
+- **Gestion Type** : Conversion sécurisée des strings en dates/montants/nombres
+
+### ✅ Corrigé
+- **Conversion de Dates** : Conversion automatique des strings POST en objets `date`
+- **Montants Numériques** : Formatage sécurisé (gestion des strings, Decimal, float)
+- **Cache Dashboard** : Ajout du cache_key manquant dans la fonction `statistics()` de AdminDashboardViewSet
+
+### ⚙️ Routes API
+- `GET/POST /contracts/create/` : Affiche formulaire, lance prévisualisation
+- `POST /contracts/preview/` : Génère aperçu, stocke en session
+- `GET /contracts/preview/download/` : Télécharge le Word de prévisualisation
+- `POST /contracts/create/` (confirmed=true) : Validation finale, création en DB
+
+---
+
 ## 🧾 Patch notes (06/02/2026)
 
 ### ✅ Corrigé
