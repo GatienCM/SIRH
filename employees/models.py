@@ -240,6 +240,10 @@ class EmployeeDocument(models.Model):
         ('certificate', 'Certificat médical'),
         ('payslip', 'Bulletin de salaire'),
         ('attestation', 'Attestation'),
+        ('cpam_attestation', 'Attestation CPAM'),
+        ('rib', 'Relevé d\'identité bancaire'),
+        ('driving_license', 'Permis de conduire'),
+        ('dpae', 'DPAE'),
         ('insurance', 'Assurance'),
         ('other', 'Autre'),
     ]

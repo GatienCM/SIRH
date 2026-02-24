@@ -21,7 +21,7 @@ from .views_app import (
     settings_professions, profession_create, profession_edit, profession_delete,
     settings_shifttypes, shifttype_create, shifttype_edit, shifttype_delete,
     absences_view, absence_delete,
-    documents_view, employee_documents_admin, document_delete, employee_documents_view,
+    documents_view, employee_documents_admin, document_delete, document_preview, employee_documents_view,
     medical_visits_view, medical_visit_edit, medical_visit_delete,
     guides_faq, guide_detail,
     employee_portal_simulate
@@ -77,6 +77,7 @@ urlpatterns = [
     path('documents/', documents_view, name='documents'),
     path('documents/employee/<int:employee_id>/', employee_documents_admin, name='employee_documents_admin'),
     path('documents/<int:document_id>/delete/', document_delete, name='document_delete'),
+    path('documents/<int:document_id>/preview/', document_preview, name='document_preview'),
     path('my-documents/', employee_documents_view, name='employee_documents'),
     
     path('medical-visits/', medical_visits_view, name='medical_visits'),

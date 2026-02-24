@@ -60,6 +60,15 @@
                         <div style="font-size: 24px; font-weight: bold;">{{ employee.document_count }}</div>
                         <div style="font-size: 12px; opacity: 0.7;">document{% if employee.document_count > 1 %}s{% endif %}</div>
                     </div>
+                    {% if employee.missing_documents > 0 %}
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                        {{ employee.missing_documents }} manquant{% if employee.missing_documents > 1 %}s{% endif %}
+                    </div>
+                    {% else %}
+                    <div style="display: inline-flex; align-items: center; gap: 6px; background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 6px 10px; border-radius: 999px; font-size: 12px; font-weight: 600;">
+                        Dossier complet
+                    </div>
+                    {% endif %}
                     <div style="font-size: 24px;">→</div>
                 </div>
             </a>

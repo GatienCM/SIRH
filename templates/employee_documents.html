@@ -42,11 +42,14 @@
                 <p style="margin: 10px 0 0 0; color: #666; font-size: 13px;">{{ doc.description }}</p>
                 {% endif %}
             </div>
-            <div>
-                <a href="{{ doc.file.url }}" target="_blank" download style="background: #667eea; color: white; padding: 12px 24px; border-radius: 4px; text-decoration: none; font-weight: 600; display: inline-block;">
-                    ⬇️ Télécharger
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+                <a href="{% url 'document_preview' doc.id %}" target="_blank" style="background: #2196F3; color: white; padding: 10px 18px; border-radius: 4px; text-decoration: none; font-weight: 600; display: inline-block; text-align: center;">
+                    👁️ Apercu
                 </a>
-                <div style="text-align: center; margin-top: 5px; font-size: 12px; color: #999;">
+                <a href="{{ doc.file.url }}" target="_blank" download style="background: #667eea; color: white; padding: 10px 18px; border-radius: 4px; text-decoration: none; font-weight: 600; display: inline-block; text-align: center;">
+                    ⬇️ Telecharger
+                </a>
+                <div style="text-align: center; margin-top: 2px; font-size: 12px; color: #999;">
                     {{ doc.file_size }} Ko
                 </div>
             </div>

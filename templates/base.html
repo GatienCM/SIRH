@@ -262,8 +262,10 @@
             <ul class="nav-menu">
                 {% if user.role == 'employee' %}
                     <li><a href="/employee-portal/" {% if request.resolver_match.url_name == 'employee_portal' %}class="active"{% endif %}>🏠 Mon Espace</a></li>
-                    <li><a href="/planning/" {% if request.resolver_match.url_name == 'planning' %}class="active"{% endif %}>📅 Mon Planning</a></li>
-                    <li><a href="/timesheets/" {% if request.resolver_match.url_name == 'timesheets' %}class="active"{% endif %}>⏱️ Mes Feuilles de Temps</a></li>
+                    <!-- Planning désactivé temporairement -->
+                    <!-- <li><a href="/planning/" {% if request.resolver_match.url_name == 'planning' %}class="active"{% endif %}>📅 Mon Planning</a></li> -->
+                    <!-- Feuilles de Temps désactivées temporairement -->
+                    <!-- <li><a href="/timesheets/" {% if request.resolver_match.url_name == 'timesheets' %}class="active"{% endif %}>⏱️ Mes Feuilles de Temps</a></li> -->
                     <li><a href="/my-documents/" {% if request.resolver_match.url_name == 'employee_documents' %}class="active"{% endif %}>📁 Mes Documents</a></li>
                     <li><a href="/guides/" {% if request.resolver_match.url_name == 'guides' %}class="active"{% endif %}>📘 Guides & FAQ</a></li>
                     <li><a href="/employee-portal/" {% if request.resolver_match.url_name == 'employee_portal' %}class="active"{% endif %}>📱 Mon Profil</a></li>
@@ -272,12 +274,16 @@
                     
                     <li style="margin-top: 20px; padding: 10px 20px; color: rgba(255,255,255,0.5); font-size: 0.8em; text-transform: uppercase;">MODULES</li>
                     <li><a href="/employees/" {% if request.resolver_match.url_name == 'employees' %}class="active"{% endif %}>👨‍💼 Employés</a></li>
-                    <li><a href="/planning/" {% if request.resolver_match.url_name == 'planning' %}class="active"{% endif %}>📅 Planning</a></li>
-                    <li><a href="/timesheets/" {% if request.resolver_match.url_name == 'timesheets' %}class="active"{% endif %}>⏱️ Feuilles de Temps</a></li>
-                    <li><a href="/payroll/" {% if request.resolver_match.url_name == 'payroll' %}class="active"{% endif %}>💰 Paie</a></li>
+                    <!-- Planning désactivé temporairement -->
+                    <!-- <li><a href="/planning/" {% if request.resolver_match.url_name == 'planning' %}class="active"{% endif %}>📅 Planning</a></li> -->
+                    <!-- Feuilles de Temps désactivées temporairement -->
+                    <!-- <li><a href="/timesheets/" {% if request.resolver_match.url_name == 'timesheets' %}class="active"{% endif %}>⏱️ Feuilles de Temps</a></li> -->
+                    <!-- Paie désactivée temporairement -->
+                    <!-- <li><a href="/payroll/" {% if request.resolver_match.url_name == 'payroll' %}class="active"{% endif %}>💰 Paie</a></li> -->
                     <li><a href="/contracts/" {% if request.resolver_match.url_name == 'contracts' %}class="active"{% endif %}>📋 Contrats</a></li>
                     <li><a href="/vehicles/" {% if request.resolver_match.url_name == 'vehicles' %}class="active"{% endif %}>🚗 Véhicules</a></li>
-                    <li><a href="/absences/" {% if request.resolver_match.url_name == 'absences' %}class="active"{% endif %}>📄 Absences</a></li>
+                    <!-- Absences désactivées temporairement -->
+                    <!-- <li><a href="/absences/" {% if request.resolver_match.url_name == 'absences' %}class="active"{% endif %}>📄 Absences</a></li> -->
                     <li><a href="/documents/" {% if request.resolver_match.url_name == 'documents' %}class="active"{% endif %}>📁 Documents</a></li>
                     <li><a href="/medical-visits/" {% if request.resolver_match.url_name == 'medical_visits' %}class="active"{% endif %}>🏥 Visites Médicales</a></li>
                     <li><a href="/guides/" {% if request.resolver_match.url_name == 'guides' %}class="active"{% endif %}>📘 Guides & FAQ</a></li>

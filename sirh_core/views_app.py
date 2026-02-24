@@ -1,4 +1,5 @@
 
+from collections import defaultdict
 from django.contrib.auth.decorators import login_required
 from django.core.cache import cache
 from sirh_core.decorators import admin_required, employee_required
@@ -238,6 +239,34 @@ def dashboard(request):
             ).aggregate(total=Sum('net_salary'))['total'] or 0), 2),
         }
         cache.set(cache_key, stats, timeout=60)
+
+    required_document_types = {
+        'contract',
+        'id_card',
+        'diploma',
+        'attestation',
+        'cpam_attestation',
+        'rib',
+        'driving_license',
+        'dpae',
+    }
+    active_employee_ids = list(
+        Employee.objects.filter(status='active').values_list('id', flat=True)
+    )
+    documents_by_employee = defaultdict(set)
+    if active_employee_ids:
+        documents_qs = EmployeeDocument.objects.filter(
+            employee_id__in=active_employee_ids,
+            document_type__in=required_document_types
+        ).values_list('employee_id', 'document_type')
+        for employee_id, document_type in documents_qs:
+            documents_by_employee[employee_id].add(document_type)
+    pending_documents = 0
+    for employee_id in active_employee_ids:
+        pending_documents += len(
+            required_document_types - documents_by_employee.get(employee_id, set())
+        )
+    stats['documents_pending'] = pending_documents
     
     # Visites médicales urgentes (à faire dans les 30 prochains jours)
     urgent_medical_visits = MedicalVisit.objects.filter(
@@ -2160,6 +2189,31 @@ def documents_view(request):
     employees = Employee.objects.filter(status='active').annotate(
         document_count=Count('ged_documents')
     ).order_by('user__last_name')
+
+    required_document_types = {
+        'contract',
+        'id_card',
+        'diploma',
+        'attestation',
+        'cpam_attestation',
+        'rib',
+        'driving_license',
+        'dpae',
+    }
+    employee_ids = [employee.id for employee in employees]
+    documents_by_employee = defaultdict(set)
+    if employee_ids:
+        documents_qs = EmployeeDocument.objects.filter(
+            employee_id__in=employee_ids,
+            document_type__in=required_document_types
+        ).values_list('employee_id', 'document_type')
+        for employee_id, document_type in documents_qs:
+            documents_by_employee[employee_id].add(document_type)
+    for employee in employees:
+        missing_count = len(
+            required_document_types - documents_by_employee.get(employee.id, set())
+        )
+        employee.missing_documents = missing_count
     
     stats = {
         'total_employees': employees.count(),
@@ -2246,6 +2300,41 @@ def document_delete(request, document_id):
     }
     
     return render(request, 'document_confirm_delete.html', context)
+
+
+@login_required(login_url='login')
+def document_preview(request, document_id):
+    """Apercu d'un document sans telechargement"""
+    from employees.models import EmployeeDocument
+    from django.http import FileResponse
+    import mimetypes
+    import os
+
+    document = get_object_or_404(EmployeeDocument, id=document_id)
+
+    if request.user.role == 'employee':
+        try:
+            employee = Employee.objects.get(user=request.user)
+        except Employee.DoesNotExist:
+            messages.error(request, "❌ Acces refuse.")
+            return redirect('employee_portal')
+
+        if document.employee_id != employee.id or not document.is_visible_to_employee:
+            messages.error(request, "❌ Acces refuse.")
+            return redirect('employee_documents')
+
+    if not document.file:
+        messages.error(request, "❌ Fichier introuvable.")
+        return redirect('documents')
+
+    content_type, _ = mimetypes.guess_type(document.file.name)
+    response = FileResponse(
+        document.file.open('rb'),
+        content_type=content_type or 'application/octet-stream'
+    )
+    filename = os.path.basename(document.file.name)
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
+    return response
 
 
 @login_required(login_url='login')

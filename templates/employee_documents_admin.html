@@ -124,8 +124,11 @@
                         </td>
                         <td style="padding: 12px 15px; text-align: center;">
                             <div style="display: flex; gap: 5px; justify-content: center;">
-                                <a href="{{ doc.file.url }}" target="_blank" style="background: #2196F3; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">
-                                    📥 Télécharger
+                                <a href="{% url 'document_preview' doc.id %}" target="_blank" style="background: #2196F3; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">
+                                    👁️ Apercu
+                                </a>
+                                <a href="{{ doc.file.url }}" target="_blank" download style="background: #4CAF50; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px;">
+                                    ⬇️ Telecharger
                                 </a>
                                 <form method="POST" action="{% url 'document_delete' doc.id %}" style="display: inline;">
                                     {% csrf_token %}

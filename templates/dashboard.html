@@ -336,19 +336,19 @@
                     <div class="change">✅ Contrats actifs</div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" style="display: none;">
                     <h3>Shifts Aujourd'hui</h3>
                     <div class="value">{{ stats.shifts_today }}</div>
                     <div class="change">👥 {{ stats.assignments_today }} affectations</div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" style="display: none;">
                     <h3>Feuilles de Temps en Attente</h3>
                     <div class="value">{{ stats.timesheets_pending }}</div>
                     <div class="change">⏳ À valider</div>
                 </div>
                 
-                <div class="stat-card">
+                <div class="stat-card" style="display: none;">
                     <h3>Paies à Calculer</h3>
                     <div class="value">{{ stats.payrolls_pending }}</div>
                     <div class="change">💵 {{ stats.total_salaries }}€ ce mois</div>
@@ -365,23 +365,26 @@
                         <p>Gestion des profils et métiers</p>
                     </a>
                     
-                    <a href="/planning/" class="module-link">
+                    <!-- Planning désactivé temporairement -->
+                    <!-- <a href="/planning/" class="module-link">
                         <div class="icon">📅</div>
                         <h3>Planning</h3>
                         <p>Shifts et affectations</p>
-                    </a>
+                    </a> -->
                     
-                    <a href="/timesheets/" class="module-link">
+                    <!-- Feuilles de Temps désactivées temporairement -->
+                    <!-- <a href="/timesheets/" class="module-link">
                         <div class="icon">⏱️</div>
                         <h3>Feuilles de Temps</h3>
                         <p>Heures et absences</p>
-                    </a>
+                    </a> -->
                     
-                    <a href="/payroll/" class="module-link">
+                    <!-- Paie désactivée temporairement -->
+                    <!-- <a href="/payroll/" class="module-link">
                         <div class="icon">💰</div>
                         <h3>Paie</h3>
                         <p>Salaires et déductions</p>
-                    </a>
+                    </a> -->
                     
                     <a href="/contracts/" class="module-link">
                         <div class="icon">📋</div>
