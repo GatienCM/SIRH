@@ -6,6 +6,28 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 
 ---
 
+## 🧾 Patch notes (24/02/2026)
+
+### ✨ Nouvelles Fonctionnalités
+- **Documents en attente (Dashboard)** : compteur des documents obligatoires manquants (somme sur tous les salariés actifs)
+- **Indicateur GED par salarié** : badge "X manquants" / "Dossier complet" dans la liste des employés
+- **Aperçu de documents** : visualisation en ligne (nouvel onglet) pour admin et salariés
+
+### 🧾 GED & Documents obligatoires
+- **Types GED étendus** : Attestation CPAM, Relevé d'identité bancaire, Permis de conduire, DPAE
+- **Documents obligatoires suivis** : Contrat de travail, Pièce d'identité, Diplôme, Attestation, Attestation CPAM, RIB, Permis, DPAE
+
+### 🎨 Interface Utilisateur
+- **Dashboard allégé** : retrait des cadres Quarts/Assignations/Feuilles de temps/Paie/Total salaires
+- **Accès rapide** : modules Planning/Feuilles de Temps/Paie/Absences retirés de l'UI
+- **Navigation** : modules désactivés retirés du menu latéral (admin et salarié)
+
+### 🔧 Technique
+- **Calcul des documents manquants** : recalcul à chaque affichage du dashboard (évite les valeurs en cache obsolètes)
+- **Routes** : ajout d'un endpoint d'aperçu document
+
+---
+
 ## 🧾 Patch notes (13/02/2026)
 
 ### ✨ Nouvelles Fonctionnalités
