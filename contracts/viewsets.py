@@ -78,3 +78,36 @@ class ContractViewSet(viewsets.ModelViewSet):
             'is_trial_period': contract.is_trial_period,
             'days_remaining': contract.days_remaining
         }, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsRH, IsAdmin])
+    def generate_document(self, request, pk=None):
+        """
+        Génère le document Word du contrat avec les vraies données de l'employé
+        Utilise les templates réalistes selon l'entité (Nantes Urgences ou Ambulances Sansoucy)
+        """
+        contract = self.get_object()
+        
+        try:
+            from .utils import generate_contract_document
+            from django.core.files.base import ContentFile
+            
+            # Générer le document
+            filename, file_content = generate_contract_document(contract)
+            
+            # Sauvegarder le fichier dans le contrat
+            contract.contract_file.save(filename, ContentFile(file_content), save=True)
+            
+            return Response({
+                'message': 'Document généré avec succès',
+                'filename': filename,
+                'contract_file_url': contract.contract_file.url if contract.contract_file else None
+            }, status=status.HTTP_200_OK)
+            
+        except FileNotFoundError as e:
+            return Response({
+                'error': f"Template introuvable: {str(e)}"
+            }, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({
+                'error': f"Erreur lors de la génération: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

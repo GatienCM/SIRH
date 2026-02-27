@@ -688,7 +688,8 @@ def create_specific_template(entity_name, contract_type, gender):
 
 def generate_contract_document(contract):
     """
-    Génère un document Word de contrat à partir d'un objet Contract
+    Génère un document Word de contrat réaliste à partir d'un objet Contract
+    Génère directement avec python-docx sans passer par des templates
     
     Args:
         contract: Instance du modèle Contract
@@ -696,98 +697,280 @@ def generate_contract_document(contract):
     Returns:
         tuple: (filename, file_content) pour sauvegarde dans FileField
     """
-    from docxtpl import DocxTemplate
+    from io import BytesIO
+    import os
     
-    # Récupérer les informations pour choisir le bon template
-    employee = contract.employee
-    entity_name = contract.entity_template if hasattr(contract, 'entity_template') and contract.entity_template else 'nantes_urgences'
-    contract_type = contract.contract_type if contract.contract_type in ['cdi', 'cdd'] else 'cdi'
-    gender = employee.gender if hasattr(employee, 'gender') else 'M'
+    # Importer la fonction de génération depuis cdd_templates_generator
+    # mais générer avec les vraies données au lieu de placeholders
+    from contracts.cdd_templates_generator import get_gender_agreements, set_cell_background
     
-    # Choisir le template en fonction de l'entité, du type de contrat et du genre
-    template_path = create_specific_template(entity_name, contract_type, gender)
-    
-    # Charger le template
-    doc = DocxTemplate(template_path)
-    
-    # Préparer le contexte pour le publipostage
+    # Récupérer les informations
     employee = contract.employee
     user = employee.user
     
-    # Formater les dates
-    start_date_fr = contract.start_date.strftime('%d/%m/%Y') if contract.start_date else ''
-    end_date_fr = contract.end_date.strftime('%d/%m/%Y') if contract.end_date else ''
-    trial_end_date_fr = contract.trial_end_date.strftime('%d/%m/%Y') if contract.trial_end_date else ''
-    birth_date_fr = employee.birth_date.strftime('%d/%m/%Y') if employee.birth_date else ''
+    # Déterminer l'entité
+    entity_name = contract.entity_template if contract.entity_template else 'nantes_urgences'
     
-    # Formater les montants - convertir en Decimal/float d'abord
+    # Déterminer le type de contrat (cdi ou cdd)
+    contract_type = 'cdi' if contract.contract_type == 'cdi' else 'cdd'
+    
+    # Déterminer le genre
+    gender = employee.gender if hasattr(employee, 'gender') and employee.gender else 'M'
+    agreements = get_gender_agreements(gender)
+    
+    # Formater les données
+    def format_date_french_long(date_obj):
+        """Formate une date en texte français long (ex: 02 mars 2026)"""
+        if not date_obj:
+            return '[Date]'
+        months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+                 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre']
+        return f"{date_obj.day:02d} {months[date_obj.month - 1]} {date_obj.year}"
+    
+    def format_date_french_short(date_obj):
+        """Formate une date en format court (JJ/MM/AAAA)"""
+        if not date_obj:
+            return '[Date]'
+        return date_obj.strftime('%d/%m/%Y')
+    
     def safe_format_currency(value):
         """Convertit une valeur en montant formaté (format français)"""
         if not value:
-            return ''
+            return '0,00'
         try:
-            # Convertir en float si c'est une string
             if isinstance(value, str):
                 value = float(value.replace(',', '.'))
-            formatted = f"{float(value):,.2f}"
-            return formatted.replace(',', ' ').replace('.', ',')
+            return f"{float(value):.2f}".replace('.', ',')
         except (ValueError, TypeError):
-            return ''
+            return '0,00'
     
-    monthly_salary_str = safe_format_currency(contract.monthly_salary)
-    hourly_rate_str = safe_format_currency(contract.hourly_rate)
+    # Préparer les données
+    monthly_hours = 152
+    if contract.working_hours_per_week:
+        try:
+            weekly_hours = float(contract.working_hours_per_week)
+            monthly_hours = int((weekly_hours * 52) / 12)
+        except (ValueError, TypeError):
+            monthly_hours = 152
     
-    # Formater working_hours - convertir en float
-    working_hours_str = str(contract.working_hours_per_week).replace('.', ',')
-    try:
-        if isinstance(contract.working_hours_per_week, str):
-            working_hours_str = str(float(contract.working_hours_per_week)).replace('.', ',')
-    except (ValueError, TypeError):
-        working_hours_str = '35'
+    trial_period_days = ''
+    if contract.trial_end_date and contract.start_date:
+        delta = contract.trial_end_date - contract.start_date
+        trial_period_days = f"{delta.days} jours"
     
-    context = {
-        # Informations sur le contrat
-        'contract_number': contract.contract_number,
-        'contract_type': contract.contract_type,
-        'contract_type_display': contract.get_contract_type_display(),
-        'start_date': start_date_fr,
-        'end_date': end_date_fr if contract.end_date else None,
-        'trial_end_date': trial_end_date_fr if contract.trial_end_date else None,
-        
-        # Informations sur l'employé
-        'employee_first_name': user.first_name,
-        'employee_last_name': user.last_name,
-        'employee_birth_date': birth_date_fr,
-        'employee_birth_place': employee.birth_place if hasattr(employee, 'birth_place') else '',
-        'employee_social_security': employee.social_security_number,
-        'employee_address': employee.address if hasattr(employee, 'address') else '',
-        'employee_profession': employee.profession.label if employee.profession else '',
-        
-        # Conditions de travail
-        'working_hours_per_week': working_hours_str,
-        'monthly_salary': monthly_salary_str if contract.monthly_salary else None,
-        'hourly_rate': hourly_rate_str if contract.hourly_rate else None,
-        
-        # Convention collective
-        'collective_agreement': contract.collective_agreement,
-        
-        # Médecine du travail
-        'occupational_health_service': contract.occupational_health_service if contract.occupational_health_service else None,
-        
-        # Signature
-        'signature_place': '[Ville]',
-        'signature_date': datetime.now().strftime('%d/%m/%Y'),
-    }
+    birth_place_code = ''
+    if employee.birth_place:
+        import re
+        match = re.search(r'\b\d{5}\b', employee.birth_place)
+        if match:
+            birth_place_code = match.group()
+        elif employee.social_security_number and len(employee.social_security_number) >= 7:
+            dept_code = employee.social_security_number[5:7]
+            birth_place_code = dept_code
     
-    # Remplir le template
-    doc.render(context)
+    city_postalcode = f"{employee.postal_code} {employee.city}" if hasattr(employee, 'postal_code') and hasattr(employee, 'city') else ''
+    
+    cdd_reason = "Remplacement d'un salarié absent" if contract.contract_type == 'cdd' else ''
+    if contract.notes and 'motif' in contract.notes.lower():
+        cdd_reason = contract.notes
+    
+    # Créer le document en important directement la bonne fonction de génération
+    if entity_name == 'ambulances_sansoucy':
+        from contracts.cdd_templates_generator import create_ambulances_sansoucy_cdd_template
+        # On ne peut pas utiliser directement car elle crée des templates, pas des documents remplis
+    
+    # Plutôt que d'utiliser les fonctions de template, on va générer directement
+    from docx import Document
+    from docx.shared import Pt, Inches
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    
+    doc = Document()
+    
+    #Marges
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(0.79)
+        section.bottom_margin = Inches(0.79)
+        section.left_margin = Inches(0.79)
+        section.right_margin = Inches(0.79)
+    
+    # EN-TÊTE selon l'entité
+    if entity_name == 'nantes_urgences':
+        company_name = 'SARL NANTES URGENCES SANSOUCY'
+        address = '8 Rue de Remouleur, 44800 SAINT-HERBLAIN'
+        siret = '48805076600028'
+        urssaf = 'URSSAF NANTES 627201905366'
+        representative = 'Monsieur Patrice BORÉ, Direction'
+        city_signature = 'St-Herblain'
+    else:  # ambulances_sansoucy
+        company_name = 'SARL AMBULANCES SANSOUCY'
+        address = '2 avenue de la Véra Cruz, 44600 SAINT NAZAIRE'
+        siret = '38026793000036'
+        urssaf = 'URSSAF NANTES 527201905363'
+        representative = 'Monsieur Bruno SANSOUCY, Gérant'
+        city_signature = 'St-Nazaire'
+    
+    # Header
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run(company_name)
+    run.bold = True
+    run.font.size = Pt(14)
+    
+    p = doc.add_paragraph(address)
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.runs[0].font.size = Pt(11)
+    
+    p = doc.add_paragraph(f'SIRET: {siret}')
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.runs[0].font.size = Pt(11)
+    
+    p = doc.add_paragraph(urssaf)
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.runs[0].font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    # TITRE
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    title = 'CONTRAT À DURÉE INDÉTERMINÉE' if contract_type == 'cdi' else 'CONTRAT À DURÉE DÉTERMINÉE'
+    run = p.add_run(title)
+    run.bold = True
+    run.font.size = Pt(12)
+    
+    doc.add_paragraph()
+    
+    # ENTRE
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run('ENTRE:')
+    run.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph(company_name)
+    doc.add_paragraph(address)
+    doc.add_paragraph(f'Représentée par {representative}')
+    
+    doc.add_paragraph()
+    doc.add_paragraph('ET')
+    doc.add_paragraph()
+    
+    # EMPLOYÉ
+    doc.add_paragraph(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()}')
+    doc.add_paragraph(employee.address if hasattr(employee, 'address') else '[Adresse]')
+    doc.add_paragraph(city_postalcode)
+    doc.add_paragraph(f'{agreements["ne"]} le: {format_date_french_short(employee.birth_date)} à {employee.birth_place if hasattr(employee, "birth_place") else "[Lieu]"} ({birth_place_code})')
+    doc.add_paragraph(f'Immatriculé: {employee.social_security_number}')
+    
+    doc.add_paragraph()
+    doc.add_paragraph()
+    
+    # RAPPEL
+    p = doc.add_paragraph()
+    run = p.add_run('IL A ÉTÉ RAPPELÉ CE QUI SUIT')
+    run.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 1
+    p = doc.add_paragraph()
+    run = p.add_run('ARTICLE 1: ATTRIBUTION ET EMPLOI')
+    run.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(f'{agreements["est_was"]} {agreements["engage"]} en qualité d\'ambulancier.')
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 2: SALAIRE
+    p = doc.add_paragraph()
+    run = p.add_run('ARTICLE 2: SALAIRE')
+    run.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run('Le salaire de ').font.size = Pt(11)
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()}').font.bold = True
+    p.add_run(' se décompose comme suit:').font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    # Tableau salaire
+    table = doc.add_table(rows=2, cols=3)
+    table.style = 'Light Grid Accent 1'
+    
+    header_cells = table.rows[0].cells
+    header_cells[0].text = 'Emploi'
+    header_cells[1].text = 'Taux'
+    header_cells[2].text = f'À compter du 1er janvier 2025 (base {monthly_hours}h / mois)'
+    
+    for cell in header_cells:
+        set_cell_background(cell, 'D9D9D9')
+        for paragraph in cell.paragraphs:
+            for run in paragraph.runs:
+                run.font.bold = True
+    
+    data_cells = table.rows[1].cells
+    data_cells[0].text = 'AA'
+    data_cells[1].text = f'{safe_format_currency(contract.hourly_rate)}€'
+    data_cells[2].text = f'{safe_format_currency(contract.monthly_salary)}€'
+    
+    doc.add_paragraph()
+    
+    # CDD spécifique
+    if contract_type == 'cdd':
+        p = doc.add_paragraph()
+        run = p.add_run('ARTICLE 3: DURÉE ET CAUSE DU CONTRAT')
+        run.bold = True
+        run.font.size = Pt(11)
+        
+        doc.add_paragraph()
+        
+        p = doc.add_paragraph()
+        p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+        p.add_run(f'est engagé à titre précaire du {format_date_french_long(contract.start_date)} au {format_date_french_long(contract.end_date) if contract.end_date else "[Date de fin]"}, avec période d\'essai de {trial_period_days if trial_period_days else "[Durée]"}.')
+        
+        p = doc.add_paragraph()
+        p.add_run(f'Motif du recours au CDD: {cdd_reason}')
+    
+    doc.add_paragraph()
+    doc.add_paragraph()
+    
+    # SIGNATURE
+    p = doc.add_paragraph()
+    p.add_run(f'Fait à {city_signature}, le {format_date_french_long(datetime.now().date())}')
+    
+    doc.add_paragraph()
+    doc.add_paragraph()
+    
+    # Tableau signature
+    sig_table = doc.add_table(rows=2, cols=2)
+    sig_table.style = 'Table Grid'
+    
+    emp_cells = sig_table.rows[0].cells
+    emp_cells[0].text = f'{agreements["civility"]} {user.first_name} {user.last_name.upper()}:'
+    emp_cells[0].paragraphs[0].runs[0].font.bold = True
+    emp_cells[0].add_paragraph('Bon pour accord, lu et approuvé')
+    
+    comp_cells = sig_table.rows[0].cells
+    comp_cells[1].text = company_name
+    comp_cells[1].paragraphs[0].runs[0].font.bold = True
+    comp_cells[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    comp_cells[1].add_paragraph(representative).alignment = WD_ALIGN_PARAGRAPH.RIGHT
     
     # Générer le nom du fichier
     filename = f"Contrat_{contract.contract_number}_{user.last_name}_{user.first_name}.docx"
-    filename = filename.replace(' ', '_')
+    filename = filename.replace(' ', '_').replace('\'', '')
     
     # Sauvegarder dans un buffer
-    from io import BytesIO
     file_stream = BytesIO()
     doc.save(file_stream)
     file_stream.seek(0)
