@@ -688,8 +688,8 @@ def create_specific_template(entity_name, contract_type, gender):
 
 def generate_contract_document(contract):
     """
-    Génère un document Word de contrat réaliste à partir d'un objet Contract
-    Génère directement avec python-docx sans passer par des templates
+    Génère un document Word de contrat réaliste COMPLET à partir d'un objet Contract
+    Inclut tous les articles des contrats réels (9-10 articles)
     
     Args:
         contract: Instance du modèle Contract
@@ -699,9 +699,9 @@ def generate_contract_document(contract):
     """
     from io import BytesIO
     import os
+    import re
     
-    # Importer la fonction de génération depuis cdd_templates_generator
-    # mais générer avec les vraies données au lieu de placeholders
+    # Importer les fonctions utilitaires
     from contracts.cdd_templates_generator import get_gender_agreements, set_cell_background
     
     # Récupérer les informations
@@ -760,7 +760,6 @@ def generate_contract_document(contract):
     
     birth_place_code = ''
     if employee.birth_place:
-        import re
         match = re.search(r'\b\d{5}\b', employee.birth_place)
         if match:
             birth_place_code = match.group()
@@ -774,19 +773,14 @@ def generate_contract_document(contract):
     if contract.notes and 'motif' in contract.notes.lower():
         cdd_reason = contract.notes
     
-    # Créer le document en important directement la bonne fonction de génération
-    if entity_name == 'ambulances_sansoucy':
-        from contracts.cdd_templates_generator import create_ambulances_sansoucy_cdd_template
-        # On ne peut pas utiliser directement car elle crée des templates, pas des documents remplis
-    
-    # Plutôt que d'utiliser les fonctions de template, on va générer directement
+    # Créer le document
     from docx import Document
     from docx.shared import Pt, Inches
     from docx.enum.text import WD_ALIGN_PARAGRAPH
     
     doc = Document()
     
-    #Marges
+    # Marges
     sections = doc.sections
     for section in sections:
         section.top_margin = Inches(0.79)
@@ -794,21 +788,40 @@ def generate_contract_document(contract):
         section.left_margin = Inches(0.79)
         section.right_margin = Inches(0.79)
     
-    # EN-TÊTE selon l'entité
+    # ========== EN-TÊTE selon l'entité ==========
     if entity_name == 'nantes_urgences':
-        company_name = 'SARL NANTES URGENCES SANSOUCY'
+        company_name = 'NANTES URGENCES SANSOUCY'
+        company_full_name = 'NANTES URGENCES SANSOUCY'
         address = '8 Rue de Remouleur, 44800 SAINT-HERBLAIN'
         siret = '48805076600028'
         urssaf = 'URSSAF NANTES 627201905366'
-        representative = 'Monsieur Patrice BORÉ, Direction'
+        representative = 'Monsieur Patrice BORÉ'
+        representative_title = 'Direction'
         city_signature = 'St-Herblain'
+        location_detail = 'au sein des établissements de la société NANTES URGENCES SANSOUCY basée à St-Herblain ou Carquefou'
+        retirement_info = [
+            'Pour la retraite: UGRR - BP 501 - 75421 PARIS CEDEX 09',
+            'Pour la prévoyance: ALLIANZ PRÉVOYANCE - 1 cours Michelet - CS 30051 92076 PARIS LA DEFENSE CEDEX'
+        ]
+        employment_type = 'DEA'
+        effective_date = '1er août 2025'
     else:  # ambulances_sansoucy
         company_name = 'SARL AMBULANCES SANSOUCY'
+        company_full_name = 'SARL AMBULANCES SANSOUCY'
         address = '2 avenue de la Véra Cruz, 44600 SAINT NAZAIRE'
         siret = '38026793000036'
         urssaf = 'URSSAF NANTES 527201905363'
-        representative = 'Monsieur Bruno SANSOUCY, Gérant'
+        representative = 'Monsieur Bruno SANSOUCY'
+        representative_title = 'Gérant'
         city_signature = 'St-Nazaire'
+        location_detail = 'au siège de la société SARL AMBULANCES SANSOUCY'
+        retirement_info = [
+            'Pour la retraite: UGRR - BP 501 - 75421 PARIS CEDEX 09',
+            'Pour la complémentaire santé: HARMONIE MUTUELLE - 44824 ST HERBLAIN CEDEX',
+            'Pour la prévoyance: ALLIANZ VIE - 1 Cours Michelet - 92076 PARIS LA DEFENSE CEDEX'
+        ]
+        employment_type = 'AA'
+        effective_date = '1er janvier 2025'
     
     # Header
     p = doc.add_paragraph()
@@ -848,9 +861,9 @@ def generate_contract_document(contract):
     run.bold = True
     run.font.size = Pt(11)
     
-    doc.add_paragraph(company_name)
+    doc.add_paragraph(company_full_name)
     doc.add_paragraph(address)
-    doc.add_paragraph(f'Représentée par {representative}')
+    doc.add_paragraph(f'Représentée par {representative}, {representative_title}')
     
     doc.add_paragraph()
     doc.add_paragraph('ET')
@@ -866,7 +879,7 @@ def generate_contract_document(contract):
     doc.add_paragraph()
     doc.add_paragraph()
     
-    # RAPPEL
+    # ========== RAPPEL ==========
     p = doc.add_paragraph()
     run = p.add_run('IL A ÉTÉ RAPPELÉ CE QUI SUIT')
     run.bold = True
@@ -874,7 +887,24 @@ def generate_contract_document(contract):
     
     doc.add_paragraph()
     
-    # ARTICLE 1
+    # Statut de l'employé
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(f'est {agreements["engage"]} en qualité d\'ambulancier.')
+    
+    doc.add_paragraph()
+    
+    # Déclaration URSSAF
+    p = doc.add_paragraph()
+    p.add_run(
+        f'La déclaration préalable à l\'embauche de {agreements["civility"]} {user.first_name} {user.last_name.upper()} '
+        f'{agreements["est_was"]} effectuée à l\'URSSAF de Nantes et {agreements["civility"]} {user.first_name} {user.last_name.upper()} '
+        'pourra exercer auprès de cet organisme son droit d\'accès et de rectification que lui confère la loi 78.17 du 6 janvier 1978.'
+    )
+    
+    doc.add_paragraph()
+    
+    # ========== ARTICLE 1: ATTRIBUTION ET EMPLOI ==========
     p = doc.add_paragraph()
     run = p.add_run('ARTICLE 1: ATTRIBUTION ET EMPLOI')
     run.bold = True
@@ -884,13 +914,174 @@ def generate_contract_document(contract):
     
     p = doc.add_paragraph()
     p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
-    p.add_run(f'{agreements["est_was"]} {agreements["engage"]} en qualité d\'ambulancier.')
+    p.add_run(
+        f'{agreements["est_was"]} {agreements["engage"]} par la société {company_full_name} en qualité d\'ambulancier, '
+        'de la convention collective des transports routiers (IDCC 16), applicable à l\'activité.'
+    )
     
     doc.add_paragraph()
     
-    # ARTICLE 2: SALAIRE
     p = doc.add_paragraph()
-    run = p.add_run('ARTICLE 2: SALAIRE')
+    p.add_run(f'En cette qualité {agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(f'{agreements["il_elle"]} aura pour mission:')
+    
+    doc.add_paragraph('Le transport de personnes en ambulance et VSL', style='List Bullet')
+    doc.add_paragraph('Et plus généralement le transport de personnes.', style='List Bullet')
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(
+        f'sera {agreements["place"]} sous l\'autorité hiérarchique de{" la direction de" if entity_name == "nantes_urgences" else "s cogérants de"} la société {company_full_name}, '
+        f'{agreements["il_elle"]} devra également respecter les plannings {"et les directives" if entity_name == "nantes_urgences" else ""} qui {agreements["se"]}lui seront données par les régulateurs.'
+    )
+    
+    doc.add_paragraph()
+    doc.add_paragraph()
+    
+    # ========== ARTICLE 2: CONDITIONS GÉNÉRALES DE TRAVAIL ==========
+    p = doc.add_paragraph()
+    run = p.add_run('ARTICLE 2: CONDITIONS GÉNÉRALES DE TRAVAIL')
+    run.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    # 2.1 Lieu de travail
+    p = doc.add_paragraph()
+    run = p.add_run('2.1 Lieu de travail')
+    run.font.bold = True
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(f'exercera ses fonctions {location_detail}.')
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run('Toutefois, ').font.size = Pt(11)
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(
+        f'{agreements["accepte"]} par avance qu\'en fonction des nécessités de l\'entreprise, {agreements["il_elle"]} soit amené à changer de lieu de travail, '
+        'et ce, dans les zones géographiques où la société exerce ou exercera son activité.'
+    ).font.size = Pt(11)
+    
+    # 2.2 Congés payés
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    run = p.add_run('2.2 Congés payés')
+    run.font.bold = True
+    
+    doc.add_paragraph()
+    
+    doc.add_paragraph(
+        'Conformément aux dispositions légales en vigueur et celles de la convention collective applicable, '
+        'le salarié bénéficiera de 2.08 jours ouvrés de congés par mois de travail effectif, '
+        'acquis sur la période courant du 1er juin au 31 mai de l\'année suivante.'
+    )
+    
+    doc.add_paragraph()
+    
+    doc.add_paragraph('La direction fixe les périodes de congés, en fonction des nécessités du service, après concertation du personnel.')
+    
+    # 2.3 Affiliations
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    if entity_name == 'nantes_urgences':
+        run = p.add_run('2.3 Caisse de retraite complémentaire')
+    else:
+        run = p.add_run('2.3 Affiliations: Retraite, Santé et Prévoyance')
+    run.font.bold = True
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run('sera affilié à:')
+    
+    doc.add_paragraph()
+    
+    for info in retirement_info:
+        doc.add_paragraph(info)
+    
+    # 2.4 Conditions générales d'exercice
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    run = p.add_run('2.4 Conditions générales d\'exercice des fonctions')
+    run.font.bold = True
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(
+        f'{agreements["se"]}engage à se conformer strictement aux instructions de la direction concernant les conditions d\'exécution du travail, '
+        f'et à respecter les plannings {"journaliers " if entity_name == "nantes_urgences" else ""}qui seront établis par les régulateurs.'
+    )
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(
+        f'déclare ne faire l\'objet d\'aucune restriction administrative ou judiciaire quant à l\'utilisation de {agreements["son_sa"]} permis de conduire, '
+        'toutes catégories confondues.'
+    )
+    
+    # ========== ARTICLE 3: DISCIPLINE ET SÉCURITÉ ==========
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    run = p.add_run('ARTICLE 3: DISCIPLINE ET SÉCURITÉ')
+    run.font.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run('déclare que toutes les coordonnées figurant à l\'entête des présentes sont exactes, et s\'oblige à prévenir l\'employeur de toutes modifications les affectant.')
+    
+    doc.add_paragraph()
+    
+    doc.add_paragraph(
+        f'{"Il" if gender == "M" else "Elle"} s\'oblige à prévenir sans délai la société {company_full_name} de toute absence quelle qu\'en soit la cause '
+        'et de la justifier dans les 48h. Sinon cela correspondra à une absence injustifiée, qui, répétée, peut engendrer une sanction disciplinaire.'
+    )
+    
+    doc.add_paragraph()
+    
+    doc.add_paragraph('En cas de maladie, il faut faire parvenir un arrêt de travail dans les 48 heures de l\'arrêt au service ressources humaines de l\'entreprise.')
+    
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run(
+        'reconnaît avoir pris connaissance du règlement intérieur en vigueur dans l\'établissement. '
+        'Tout manquement au présent règlement pourra donner lieu à des poursuites disciplinaires et à un éventuel licenciement pour faute.'
+    )
+    
+    # ========== ARTICLE 4: CONFIDENTIALITÉ ET SECRET PROFESSIONNEL ==========
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    run = p.add_run('ARTICLE 4: CONFIDENTIALITÉ ET SECRET PROFESSIONNEL')
+    run.font.bold = True
+    run.font.size = Pt(11)
+    
+    doc.add_paragraph()
+    
+    doc.add_paragraph(
+        f'Compte tenu des fonctions confiées à {agreements["civility"]} {user.first_name} {user.last_name.upper()}, '
+        'celui-ci est tenu par un secret professionnel tant en ce qui concerne l\'identité des clients transportés que leur destination.'
+    )
+    
+    # ========== ARTICLE 5: SALAIRE ==========
+    doc.add_paragraph()
+    p = doc.add_paragraph()
+    run = p.add_run('ARTICLE 5: SALAIRE')
     run.bold = True
     run.font.size = Pt(11)
     
@@ -899,7 +1090,7 @@ def generate_contract_document(contract):
     p = doc.add_paragraph()
     p.add_run('Le salaire de ').font.size = Pt(11)
     p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()}').font.bold = True
-    p.add_run(' se décompose comme suit:').font.size = Pt(11)
+    p.add_run(', SMPG (Salaire Minimum Professionnel Garanti), se décompose comme suit:').font.size = Pt(11)
     
     doc.add_paragraph()
     
@@ -910,7 +1101,7 @@ def generate_contract_document(contract):
     header_cells = table.rows[0].cells
     header_cells[0].text = 'Emploi'
     header_cells[1].text = 'Taux'
-    header_cells[2].text = f'À compter du 1er janvier 2025 (base {monthly_hours}h / mois)'
+    header_cells[2].text = f'À compter du {effective_date} (base {monthly_hours}h / mois)'
     
     for cell in header_cells:
         set_cell_background(cell, 'D9D9D9')
@@ -919,16 +1110,29 @@ def generate_contract_document(contract):
                 run.font.bold = True
     
     data_cells = table.rows[1].cells
-    data_cells[0].text = 'AA'
+    data_cells[0].text = employment_type
     data_cells[1].text = f'{safe_format_currency(contract.hourly_rate)}€'
     data_cells[2].text = f'{safe_format_currency(contract.monthly_salary)}€'
     
     doc.add_paragraph()
     
-    # CDD spécifique
+    # Indemnités supplémentaires
+    p = doc.add_paragraph()
+    p.add_run('En sus du SMPG, il pourra être versé à ').font.size = Pt(11)
+    p.add_run(f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} ').font.bold = True
+    p.add_run('les indemnités suivantes, dans les termes de l\'accord du 04 mai 2000:').font.size = Pt(11)
+    
+    doc.add_paragraph('IDAJ (Indemnité Dépassement d\'amplitude Journalière)')
+    doc.add_paragraph(
+        'Tâches complémentaires: elles se trouvent définies à l\'accord cadre et donneront lieu à un paiement spécifique '
+        'chaque fois qu\'elles auront été effectuées.'
+    )
+    
+    # ========== ARTICLE 6 (CDD): DURÉE ET CAUSE DU CONTRAT ==========
     if contract_type == 'cdd':
+        doc.add_paragraph()
         p = doc.add_paragraph()
-        run = p.add_run('ARTICLE 3: DURÉE ET CAUSE DU CONTRAT')
+        run = p.add_run('ARTICLE 6: DURÉE ET CAUSE DU CONTRAT')
         run.bold = True
         run.font.size = Pt(11)
         
@@ -940,11 +1144,26 @@ def generate_contract_document(contract):
         
         p = doc.add_paragraph()
         p.add_run(f'Motif du recours au CDD: {cdd_reason}')
+        
+        # ========== ARTICLE 7 (CDD): INDEMNITÉ DE FIN DE CONTRAT ==========
+        doc.add_paragraph()
+        p = doc.add_paragraph()
+        run = p.add_run('ARTICLE 7: INDEMNITÉ DE FIN DE CONTRAT')
+        run.bold = True
+        run.font.size = Pt(11)
+        
+        doc.add_paragraph()
+        
+        doc.add_paragraph(
+            'Lorsque, à l\'issue de ce contrat, les relations de travail ne se poursuivent pas par un contrat à durée indéterminée, '
+            f'{agreements["civility"]} {user.first_name} {user.last_name.upper()} a droit à une indemnité de fin de contrat égale à 10% '
+            'de la rémunération totale brute versée.'
+        )
     
+    # ========== SIGNATURE ==========
     doc.add_paragraph()
     doc.add_paragraph()
     
-    # SIGNATURE
     p = doc.add_paragraph()
     p.add_run(f'Fait à {city_signature}, le {format_date_french_long(datetime.now().date())}')
     
@@ -961,10 +1180,16 @@ def generate_contract_document(contract):
     emp_cells[0].add_paragraph('Bon pour accord, lu et approuvé')
     
     comp_cells = sig_table.rows[0].cells
-    comp_cells[1].text = company_name
+    comp_cells[1].text = company_full_name
     comp_cells[1].paragraphs[0].runs[0].font.bold = True
     comp_cells[1].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    comp_cells[1].add_paragraph(representative).alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    
+    comp_desc = comp_cells[1].add_paragraph(representative)
+    comp_desc.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    
+    comp_desc2 = comp_cells[1].add_paragraph(representative_title)
+    comp_desc2.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    comp_desc2.runs[0].font.bold = True
     
     # Générer le nom du fichier
     filename = f"Contrat_{contract.contract_number}_{user.last_name}_{user.first_name}.docx"
