@@ -32,25 +32,27 @@ def get_gender_agreements(gender):
         return {
             'civility': 'Madame',
             'engage': 'engagée',
-            'ne': 'née',
+            'ne': 'e',
             'il_elle': 'elle',
             'son_sa': 'sa',
             'est_was': 'a',
             'se': 'se',
             'place': 'placée',
             'accepte': 'accepte',
+            'affilie': 'affiliée',
         }
     else:
         return {
             'civility': 'Monsieur',
             'engage': 'engagé',
-            'ne': 'né',
+            'ne': '',
             'il_elle': 'il',
             'son_sa': 'son',
             'est_was': 'a',
             'se': 's\'',
             'place': 'placé',
             'accepte': 'accepte',
+            'affilie': 'affilié',
         }
 
 
