@@ -6,6 +6,21 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 
 ---
 
+## 🧾 Patch notes (27/02/2026)
+
+### ✨ Nouvelles Fonctionnalités
+- **Contrats multi-variantes** : sélection automatique du template selon l'entité, le type (CDD/CDI) et le genre
+- **Accords grammaticaux** : gestion des formulations homme/femme dans les contrats
+
+### 👤 Employés
+- **Genre** : ajout du champ Masculin/Féminin pour les accords contractuels
+- **Validation matricule** : contrôle d'unicité du matricule salarié avant création
+
+### 🎨 Interface Utilisateur
+- **Formulaire employé** : ajout du champ Genre dans la création et modification
+
+---
+
 ## 🧾 Patch notes (24/02/2026)
 
 ### ✨ Nouvelles Fonctionnalités

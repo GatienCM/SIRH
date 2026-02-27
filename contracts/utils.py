@@ -432,6 +432,260 @@ def create_entity_template(entity_name):
     return template_path
 
 
+def get_gender_agreements(gender):
+    """
+    Retourne les accords grammaticaux selon le genre
+    
+    Args:
+        gender: 'M' (masculin) ou 'F' (féminin)
+        
+    Returns:
+        dict: Dictionnaire avec les variantes grammaticales
+    """
+    if gender == 'F':
+        return {
+            'salarie': 'La salariée',
+            'salarie_art': 'la salariée',
+            'engage': 'engagée',
+            'ne': 'née',
+            'il_elle': 'elle',
+            'son_sa': 'sa',
+            'lui': 'elle',
+        }
+    else:
+        return {
+            'salarie': 'Le salarié',
+            'salarie_art': 'le salarié',
+            'engage': 'engagé',
+            'ne': 'né',
+            'il_elle': 'il',
+            'son_sa': 'son',
+            'lui': 'lui',
+        }
+
+
+def create_specific_template(entity_name, contract_type, gender):
+    """
+    Crée un template de contrat personnalisé pour une entité, type de contrat et genre spécifiques
+    
+    Args:
+        entity_name: 'nantes_urgences' ou 'ambulances_sansoucy'
+        contract_type: 'cdi' ou 'cdd'
+        gender: 'M' (masculin) ou 'F' (féminin)
+        
+    Returns:
+        str: Chemin du template créé
+    """
+    template_dir = os.path.join(settings.BASE_DIR, 'templates', 'word_templates')
+    gender_suffix = 'homme' if gender == 'M' else 'femme'
+    template_path = os.path.join(template_dir, f'contrat_{entity_name}_{contract_type}_{gender_suffix}.docx')
+    
+    # Si le template existe déjà, ne pas le recréer
+    if os.path.exists(template_path):
+        return template_path
+    
+    # Créer le dossier si nécessaire
+    os.makedirs(template_dir, exist_ok=True)
+    
+    # Informations spécifiques à chaque entité
+    entity_info = {
+        'nantes_urgences': {
+            'name': 'NANTES URGENCES SANSOUCY',
+            'legal_form': 'SARL',
+            'address': '12 Rue de la Chapelle\n44000 NANTES',
+            'siret': '123 456 789 00012',
+            'representative': 'M. Jean SANSOUCY, Gérant',
+            'medical_service': 'Service de Santé au Travail de Loire-Atlantique',
+        },
+        'ambulances_sansoucy': {
+            'name': 'AMBULANCES SANSOUCY',
+            'legal_form': 'SAS',
+            'address': '25 Avenue des Ambulances\n44300 NANTES',
+            'siret': '987 654 321 00019',
+            'representative': 'Mme. Marie SANSOUCY, Présidente',
+            'medical_service': 'ASTIA - Service de Santé au Travail',
+        }
+    }
+    
+    info = entity_info.get(entity_name, entity_info['nantes_urgences'])
+    agreements = get_gender_agreements(gender)
+    
+    # Créer le document
+    doc = Document()
+    
+    # Configuration des marges
+    sections = doc.sections
+    for section in sections:
+        section.top_margin = Inches(1)
+        section.bottom_margin = Inches(1)
+        section.left_margin = Inches(1.25)
+        section.right_margin = Inches(1.25)
+    
+    # Titre
+    title = doc.add_paragraph()
+    title.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = title.add_run('CONTRAT DE TRAVAIL')
+    run.bold = True
+    run.font.size = Pt(16)
+    
+    doc.add_paragraph()
+    
+    # Sous-titre avec type de contrat
+    subtitle = doc.add_paragraph()
+    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    contract_type_label = 'CDI - Contrat à Durée Indéterminée' if contract_type == 'cdi' else 'CDD - Contrat à Durée Déterminée'
+    subtitle.add_run(contract_type_label)
+    
+    doc.add_paragraph()
+    doc.add_paragraph('_' * 100)
+    doc.add_paragraph()
+    
+    # ENTRE LES SOUSSIGNÉS
+    doc.add_paragraph('ENTRE LES SOUSSIGNÉS :').runs[0].bold = True
+    doc.add_paragraph()
+    
+    # Employeur avec informations spécifiques
+    p = doc.add_paragraph()
+    p.add_run('L\'EMPLOYEUR\n').bold = True
+    p.add_run(f'{info["name"]}\n')
+    p.add_run(f'{info["legal_form"]}\n')
+    p.add_run(f'{info["address"]}\n')
+    p.add_run(f'SIRET : {info["siret"]}\n')
+    p.add_run(f'Représentée par : {info["representative"]}\n')
+    
+    doc.add_paragraph()
+    doc.add_paragraph('D\'UNE PART,').alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph()
+    
+    # Salarié avec variables Jinja2 et accords de genre
+    p = doc.add_paragraph()
+    p.add_run(f'ET {agreements["salarie"].upper()}\n').bold = True
+    p.add_run('Nom : {{ employee_last_name }}\n')
+    p.add_run('Prénom : {{ employee_first_name }}\n')
+    p.add_run(f'Date de naissance : {{{{ employee_birth_date }}}} - {agreements["ne"]} à {{{{ employee_birth_place }}}}\n')
+    p.add_run('N° Sécurité sociale : {{ employee_social_security }}\n')
+    p.add_run('Adresse : {{ employee_address }}\n')
+    
+    doc.add_paragraph()
+    doc.add_paragraph('D\'AUTRE PART,').alignment = WD_ALIGN_PARAGRAPH.CENTER
+    doc.add_paragraph()
+    doc.add_paragraph('_' * 100)
+    doc.add_paragraph()
+    
+    # ARTICLE 1 - ENGAGEMENT
+    doc.add_paragraph('ARTICLE 1 - ENGAGEMENT').runs[0].bold = True
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["salarie"]} est {agreements["engage"]}')
+    
+    if contract_type == 'cdd':
+        p.add_run(' à compter du {{ start_date }} jusqu\'au {{ end_date }} en qualité de {{ employee_profession }}.')
+    else:
+        p.add_run(' à compter du {{ start_date }} en qualité de {{ employee_profession }}.')
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 2 - PÉRIODE D'ESSAI
+    doc.add_paragraph('ARTICLE 2 - PÉRIODE D\'ESSAI').runs[0].bold = True
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run('{% if trial_end_date %}')
+    p = doc.add_paragraph()
+    p.add_run('Une période d\'essai est prévue jusqu\'au {{ trial_end_date }}.')
+    p = doc.add_paragraph()
+    p.add_run('{% else %}')
+    p = doc.add_paragraph()
+    p.add_run('Aucune période d\'essai n\'est prévue.')
+    p = doc.add_paragraph()
+    p.add_run('{% endif %}')
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 3 - DURÉE DU TRAVAIL
+    doc.add_paragraph('ARTICLE 3 - DURÉE DU TRAVAIL').runs[0].bold = True
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["salarie"]} exercera {agreements["son_sa"]} activité à raison de {{{{ working_hours_per_week }}}} heures par semaine.')
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 4 - RÉMUNÉRATION
+    doc.add_paragraph('ARTICLE 4 - RÉMUNÉRATION').runs[0].bold = True
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run('{% if monthly_salary %}')
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["salarie"]} percevra une rémunération mensuelle brute de {{{{ monthly_salary }}}} euros.')
+    p = doc.add_paragraph()
+    p.add_run('{% endif %}')
+    
+    p = doc.add_paragraph()
+    p.add_run('{% if hourly_rate %}')
+    p = doc.add_paragraph()
+    p.add_run('Le taux horaire brut s\'élève à {{ hourly_rate }} euros.')
+    p = doc.add_paragraph()
+    p.add_run('{% endif %}')
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 5 - CONVENTION COLLECTIVE
+    doc.add_paragraph('ARTICLE 5 - CONVENTION COLLECTIVE').runs[0].bold = True
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run('Le présent contrat est soumis à la {{ collective_agreement }}.')
+    
+    doc.add_paragraph()
+    
+    # ARTICLE 6 - MÉDECINE DU TRAVAIL
+    doc.add_paragraph('ARTICLE 6 - MÉDECINE DU TRAVAIL').runs[0].bold = True
+    doc.add_paragraph()
+    
+    p = doc.add_paragraph()
+    p.add_run(f'{agreements["salarie"]} relève du service de médecine du travail : {info["medical_service"]}')
+    p = doc.add_paragraph()
+    p.add_run('{% if occupational_health_service %}')
+    p = doc.add_paragraph()
+    p.add_run(' - {{ occupational_health_service }}')
+    p = doc.add_paragraph()
+    p.add_run('{% endif %}')
+    
+    doc.add_paragraph()
+    doc.add_paragraph()
+    doc.add_paragraph('Fait à {{ signature_place }}, le {{ signature_date }}')
+    doc.add_paragraph()
+    doc.add_paragraph()
+    
+    # Tableau de signatures
+    table = doc.add_table(rows=2, cols=2)
+    table.style = 'Table Grid'
+    
+    # En-têtes
+    header_cells = table.rows[0].cells
+    header_cells[0].text = 'L\'Employeur'
+    header_cells[1].text = f'{agreements["salarie"]}'
+    
+    # Espaces pour signatures
+    for cell in header_cells:
+        cell.paragraphs[0].runs[0].bold = True
+        cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    # Lignes de signature
+    signature_cells = table.rows[1].cells
+    for cell in signature_cells:
+        cell.text = '\n\n\n'
+        cell.paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.CENTER
+    
+    # Sauvegarder
+    doc.save(template_path)
+    
+    return template_path
+
+
 def generate_contract_document(contract):
     """
     Génère un document Word de contrat à partir d'un objet Contract
@@ -444,12 +698,14 @@ def generate_contract_document(contract):
     """
     from docxtpl import DocxTemplate
     
-    # Choisir le template en fonction de l'entité
-    if hasattr(contract, 'entity_template') and contract.entity_template:
-        template_path = create_entity_template(contract.entity_template)
-    else:
-        # Utiliser le template générique par défaut
-        template_path = create_contract_template()
+    # Récupérer les informations pour choisir le bon template
+    employee = contract.employee
+    entity_name = contract.entity_template if hasattr(contract, 'entity_template') and contract.entity_template else 'nantes_urgences'
+    contract_type = contract.contract_type if contract.contract_type in ['cdi', 'cdd'] else 'cdi'
+    gender = employee.gender if hasattr(employee, 'gender') else 'M'
+    
+    # Choisir le template en fonction de l'entité, du type de contrat et du genre
+    template_path = create_specific_template(entity_name, contract_type, gender)
     
     # Charger le template
     doc = DocxTemplate(template_path)

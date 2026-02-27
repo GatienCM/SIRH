@@ -1140,6 +1140,13 @@ def employee_create(request):
             errors.append('La profession est obligatoire')
         if not request.POST.get('employee_id', '').strip():
             errors.append('Le matricule salarié est obligatoire')
+        
+        # Vérifier si l'ID employé existe déjà
+        employee_id = request.POST.get('employee_id', '').strip()
+        if employee_id and Employee.objects.filter(employee_id=employee_id).exists():
+            errors.append(f'Le matricule "{employee_id}" est déjà utilisé')
+        
+        # Vérifier si le numéro de sécu existe déjà
         if request.POST.get('social_security_number'):
             if Employee.objects.filter(social_security_number=request.POST.get('social_security_number').strip()).exists():
                 errors.append('Le numéro de sécurité sociale est déjà utilisé')
@@ -1182,6 +1189,7 @@ def employee_create(request):
                 birth_date=request.POST.get('birth_date'),
                 birth_place=request.POST.get('birth_place', '').strip(),
                 nationality=request.POST.get('nationality', 'Français(e)'),
+                gender=request.POST.get('gender', 'M'),
                 address=request.POST.get('address', '').strip(),
                 postal_code=request.POST.get('postal_code', '').strip(),
                 city=request.POST.get('city', '').strip(),
@@ -1295,6 +1303,7 @@ def employee_edit(request, employee_id):
             employee.birth_date = request.POST.get('birth_date')
             employee.birth_place = request.POST.get('birth_place', '').strip()
             employee.nationality = request.POST.get('nationality', 'Français(e)')
+            employee.gender = request.POST.get('gender', 'M')
             employee.address = request.POST.get('address', '').strip()
             employee.postal_code = request.POST.get('postal_code', '').strip()
             employee.city = request.POST.get('city', '').strip()

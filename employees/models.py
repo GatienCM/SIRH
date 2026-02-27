@@ -101,6 +101,18 @@ class Employee(models.Model):
         help_text='Nationalité'
     )
     
+    GENDER_CHOICES = [
+        ('M', 'Masculin'),
+        ('F', 'Féminin'),
+    ]
+    
+    gender = models.CharField(
+        max_length=1,
+        choices=GENDER_CHOICES,
+        default='M',
+        help_text='Genre (pour les accords dans les contrats)'
+    )
+    
     # Adresse
     address = models.CharField(
         max_length=200,
