@@ -19,6 +19,9 @@ Plateforme Django moderne incluant la gestion des employés, planning, feuilles 
 ### 🎨 Interface Utilisateur
 - **Formulaire employé** : ajout du champ Genre dans la création et modification
 
+### 🧹 Maintenance
+- **Nettoyage du repo** : suppression des scripts utilitaires/demo non utilisés
+
 ---
 
 ## 🧾 Patch notes (24/02/2026)
